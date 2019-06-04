@@ -8,8 +8,8 @@ Scope of work
 - Compute -> ARM Linux, Windows
 - Monitoring, Backup ARM
 - Automation setup
-- Install App Linux - Linux extension
-- Install App Windows - DSC extension
+- Install App Linux VM/VMSS - Linux extension
+- Install App Windows VM/VMSS - DSC extension
 - DevOps prepare & setup CI/CD
 - DevOps define environments - TEST, PROD
 - Delete all, provision from DevOps
