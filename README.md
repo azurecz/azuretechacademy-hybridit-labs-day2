@@ -13,3 +13,15 @@ Scope of work
 - DevOps prepare & setup CI/CD
 - DevOps define environments - TEST, PROD
 - Delete all, provision from DevOps
+
+## Contacts
+
+### Tomas Kubica - Azure TSP at Microsoft
+- https://www.linkedin.com/in/tkubica
+- https://github.com/tkubica12
+- https://twitter.com/tkubica
+
+### Jaroslav Jindrich - Cloud Solutions Architect
+- https://www.linkedin.com/in/jjindrich
+- https://github.com/jjindrich
+- https://twitter.com/jjindrich_cz
