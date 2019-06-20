@@ -1,19 +1,5 @@
 # Azure Technical Academy - Hybrid IT Day 2: automation
 
-## Scope of work (planned)
-
-- SQL Database -> ARM template prepare (from GUI -> template) & load data
-- Networking -> ARM template
-- ARM master - call SQL & networking
-- Compute -> ARM Linux, Windows
-- Monitoring, Backup ARM
-- Automation setup
-- Install App Linux VM/VMSS - Linux extension
-- Install App Windows VM/VMSS - DSC extension
-- DevOps prepare & setup CI/CD
-- DevOps define environments - TEST, PROD
-- Delete all, provision from DevOps
-
 ## Prerequisities
 - All day1 labs completed and knowledge of all topics covered
 - Homework from day1 completed and shared with instructors via private message on Teams
@@ -23,6 +9,30 @@
   - 10 or more total vCPUs in region West Europe
   - 10 or more B-series VM vCPUs in region West Europe
 - Precreated Azure DevOps organization with full rights for purpose of this Lab, instructions in [documentation](https://docs.microsoft.com/en-us/azure/devops/organizations/accounts/create-organization?view=azure-devops)
+
+## Learn ARM template basics - parameters, variables, resources, copy loop, uniquestring, resourceId, reference, outputs
+
+## Provision Azure SQL via GUI
+
+## Create ARM template for Azure SQL
+
+## Leverage Azure Key Vault to manage and store deployment secrets
+
+## Create ARM template for networking
+
+## Create ARM template for shared monitoring environment and Azure Backup
+
+## Learn how to use and upgrade Virtual Machine Scale Set on Linux with VM extensions
+
+## Create ARM template for Linux-based VMSS with custom script extension
+
+## Create ARM template for Windows-based VMSS with PowerShell DSC automation
+
+## Create Master ARM template to include complete solution
+
+## Use Azure DevOps Repos to store and maintain ARM templates
+
+## Use Azure DevOps Pipelines to orchestrate desired state infrastructure lifecycle (part of CI/CD strategy)
 
 ## Automation and governance with Azure Bluprints
 Consider following scenario. We have created hub subcription with centralized components such as Azure Firewall, Azure VPN and Domain Controller. Application projects are deployed in spoke subscriptions that allow connectivity via hub network. Suppose for certain types of projects we have following governance needs:
@@ -64,6 +74,10 @@ Study template [here](blueprints/limitedContributorRole.json). Modify blueprint 
 - user **can** create additional resources such as new Resource Group
 
 For compliance reasons we want to limit resources to be deployed only in West Europe and North Europe. Modify blueprint and add Azure Policy artefact on subscription level. Find Allowed Locations built-in policy and set fixed parameter to West Europe and North Europe only. Save blueprint and publish as **version 4**. After deployment connect as project1guy and create storage account in West Europe and East US. Deployment in East US should fail.
+
+## Automate and publish corporate golden images with Shared Image Gallery and Image Builder
+
+## Package you ARM template and publish in Azure Service Catalog as Managed Application (internal SaaS-style)
 
 ## Contacts
 
