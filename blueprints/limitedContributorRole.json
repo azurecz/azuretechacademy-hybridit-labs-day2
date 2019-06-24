@@ -41,6 +41,7 @@
                             "Microsoft.Network/routeTables/*",
                             "Microsoft.Network/virtualNetworkGateways/*",
                             "Microsoft.Network/virtualNetworks/*/write",
+                            "Microsoft.Network/virtualNetworks/*/delete",
                             "Microsoft.Network/virtualNetworks/virtualNetworkPeerings/*",
                             "Microsoft.Network/virtualWans/*",
                             "Microsoft.Network/vpnGateways/*"
