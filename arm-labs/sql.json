@@ -1,0 +1,43 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "dbPassword": {
+            "type": "securestring"
+        }
+    },
+    "variables": {
+        "sqlName": "db"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Sql/servers",
+            "apiVersion": "2015-05-01-preview",
+            "name": "[variables('sqlName')]",
+            "location": "westeurope",
+            "properties": {
+                "administratorLogin": "labuser",
+                "administratorLoginPassword": "[parameters('dbPassword')]",
+                "version": "12.0"
+            }
+        },
+        {
+            "type": "Microsoft.Sql/servers/databases",
+            "name": "[concat(variables('sqlName'), '/todo')]",
+            "location": "westeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', variables('sqlName'))]"
+            ],
+            "sku": {
+                "name": "Basic",
+                "tier": "Basic"
+            },
+            "properties": {
+                "collation": "SQL_Latin1_General_CP1_CI_AS",
+                "maxSizeBytes": 2147483648,
+                "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
+                "zoneRedundant": false
+            }
+        }
+    ]
+}

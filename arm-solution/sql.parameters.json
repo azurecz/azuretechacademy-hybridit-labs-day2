@@ -1,0 +1,17 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "dbLoginName": {
+            "value": "labuser"
+        },
+        "dbPassword": {
+            "reference": {
+                "keyVault": {
+                    "id": "/subscriptions/mysubscriptionid/resourceGroups/arm-deployment-artifacts/providers/Microsoft.KeyVault/vaults/tomasuniquevault123"
+                },
+                "secretName": "mojeHeslo"
+            }
+        }
+    }
+}

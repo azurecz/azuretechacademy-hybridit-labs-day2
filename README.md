@@ -119,13 +119,67 @@ az group delete -y --no-wait -n arm-newtesting
 az group delete -y --no-wait -n arm-newtesting-secondary
 ```
 
-
-
 ## Provision Azure SQL via GUI
+There are multiple ways to get JSON snipplets to create your templates.
+
+Check [Azure Quickstart Templates](https://github.com/Azure/AzureStack-QuickStart-Templates)
+
+Check [ARM reference guide](https://docs.microsoft.com/en-us/azure/templates/)
+
+Another approach is to create resources using GUI and check results using one of following three approaches. Use GUI to create SQL DB and SQL virtual server in Basic tier and stop on last step of GUI wizard.
+
+* Fill in required details and click Download a template for automation. This is ideal to get well formatted intitial resource template.
+* After deployment you can export template - go to Export template section of your Resource Group. Note that this exports a lot of default settings so template can be noisier than needed. Also note export does not expose fields that contain sensitive data (passwords), but those are mandatory to use during provisioning.
+* You can also use Resource explorer (find it under All services). This is great for finding details on how Azure operates and get right structures without any parameters. But note, that this is runtime view and includes keys, that are not used when creating ARM templates (etag, id, deploymentState etc.). Also note export does not expose fields that contain sensitive data (passwords), but those are mandatory to use during provisioning.
 
 ## Create ARM template for Azure SQL
+Go to arm-labs folder. There is template sql.json. Let's deploy it, but expect few issues we will solve as we go.
 
-## Leverage Azure Key Vault to manage and store deployment secrets
+```powershell
+az group create -n arm-app -l westeurope
+az group deployment create -g arm-app `
+    --template-file sql.json `
+    --parameters "@sql.parameters.json"
+```
+There are few issues we need to fix:
+* Deployment fails. Use az group deployment validate to get details what is wrong on syntax level and fix the problem.
+* Validation is fine, but deployment fails. Investigate what is wrong. Hint: you will use uniqueString function as part of the solution.
+* Location is hardcoded. Make it variable and use function to automatically get location of Resource Group template is being deployed to.
+* DB login name is hardcoded. Make it parameter.
+
+We will now use more secure way to pass database password. You should not put secrets into template. Storing in parameters file can be OK if this file is kept separately (and more securely). Specifying during deployment time requires person deploying to know password, but that can be fixed by automated deployment and secrets management in CI/CD tool like Azure DevOps. Most secure mechanism is to use Azure KeyVault and referencing stored secret during deployment while account with rights to deploy template does not need rights to manage secrets.
+
+First create KeyVault and add password to it as secret.
+```powershell
+# Create Key Vault and store secret
+az group create -n arm-deployment-artifacts -l westeurope
+$keyVaultName = "tomasuniquevault123"
+az keyvault create  `
+    -n $keyVaultName `
+    -g arm-deployment-artifacts `
+     --enabled-for-template-deployment
+az keyvault secret set -n mojeHeslo `
+    --vault-name $keyVaultName `
+    --value Azure12345678
+
+# Get Key Vault ID
+az keyvault show -n $keyVaultName `
+    -g arm-deployment-artifacts `
+    --query id `
+    -o tsv
+```
+
+Modify your template parameters file to include reference to KeyVault secret.
+```json
+"dbPassword": {
+    "reference": {
+        "keyVault": {
+        "id": "/subscriptions/mysubscriptionid/resourceGroups/arm-deployment-artifacts/providers/Microsoft.KeyVault/vaults/tomasuniquevault123"
+        },
+        "secretName": "mojeHeslo"
+    }
+}
+```
 
 ## Create ARM template for networking
 
