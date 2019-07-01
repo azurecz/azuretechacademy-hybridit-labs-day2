@@ -11,6 +11,115 @@
 - Precreated Azure DevOps organization with full rights for purpose of this Lab, instructions in [documentation](https://docs.microsoft.com/en-us/azure/devops/organizations/accounts/create-organization?view=azure-devops)
 
 ## Learn ARM template basics - parameters, variables, resources, copy loop, uniquestring, resourceId, reference, outputs
+First let's learn some ARM template basics. Jump to arm-tutorial folder.
+
+Deploy simple template to create Public IP.
+
+```powershell
+az group create -n arm-testing -l westeurope
+az group deployment create -g arm-testing --template-file 01.json
+```
+
+Deploy template that has different name for IP.
+```powershell
+az group deployment create -g arm-testing --template-file 02.json
+```
+
+Notice new object has been added, but previous one is still there. Default ARM mode is Incremental (not pure desired state) to prevent beginners accidentaly destroy things, just adding or changing (if property can be changed without recreation). With Complete mode ARM will make actual state to reflect desired state in template, so if there are resources in reality that are not described in template, those will be deleted.
+
+```powershell
+az group deployment create -g arm-testing --template-file 02.json --mode Complete
+```
+
+Avoid repeating values by using variables. Eg. do not hardcode location with every resource. Rather make it variable and reference it. It is than easier to change your template.
+
+```powershell
+az group deployment create -g arm-testing --template-file 03.json --mode Complete
+```
+
+ARM provides couple of functions. Most of the time you will want location of your resources to be the same as location for your Resource Group (even it is not mandatory). We can get location of Resource Group during runtime via function call.
+
+```powershell
+az group deployment create -g arm-testing --template-file 04.json --mode Complete
+```
+
+ARM template should be universal so you do not change it when deploying to different environments. Let's make IP name prefix to be parameter and also take environment name as parameter with fixed allowed values. We will use concat string function to build actual IP name.
+
+```powershell
+az group deployment create -g arm-testing --template-file 05.json --mode Complete
+```
+
+Notice CLI has asked for required parameters (if you do not require parameter use defaultValue). You can also specify this via CLI and it does not have to be complete set (CLI will ask for missing pieces).
+
+```powershell
+az group deployment create -g arm-testing `
+    --template-file 05.json `
+    --mode Complete `
+    --parameters ipNamePrefix=myip
+```
+
+You can also provide values in JSON file (but still can override some with --parameters).
+
+```powershell
+az group deployment create -g arm-testing `
+    --template-file 05.json `
+    --mode Complete `
+    --parameters "@05.parameters.json"
+```
+
+Sometimes you need to deploy resources to more resource groups or even subscriptions with single template. This can be achieved using nested or linked templates. One (master) template can execute different template either writen inline (nested) or via URL (linked) and do that within context of specific resource group and subscription.
+```powershell
+az group create -n arm-testing-secondary -l westeurope
+az group deployment create -g arm-testing `
+    --template-file 06.json `
+    --mode Complete `
+    --parameters "@06.parameters.json" `
+    --parameters secondaryResourceGroupName=arm-testing-secondary
+```
+
+Some resources such as storage account require globaly unique names. ARM template should not generate random values as it is not idempotent (you should be able to run template any number of times and always get the same results). To generate some string in a way that it is very likely to be unique yet stable for deployment use uniqueString function (hash) with some input on which you generate that hash (eg. full resource group ID, which includes subscription ID and resource group name).
+
+```powershell
+az group deployment create -g arm-testing `
+    --template-file 07.json `
+    --mode Complete `
+    --parameters "@07.parameters.json" `
+    --parameters secondaryResourceGroupName=arm-testing-secondary
+```
+
+ARM creates all resources in parallel by default. If there are dependencies between resources, we need to declare those. Eg. we can create Blob storage container, but for that storage account needs to exist first. Container is subresource and can be specified under resource:[] in main resource or separately where name consist of parentresource/childresources. To declare dependecy we will use dependsOn. You can use simple resource name (if there is no conflict), but best practice is always to use full resource ID. To get that during runtime let's use resourceId function (note resourceId by default search current resource group, but can be extended to look into specified resource group or even different subscription).
+
+```powershell
+az group deployment create -g arm-testing `
+    --template-file 08.json `
+    --mode Complete `
+    --parameters "@08.parameters.json" `
+    --parameters secondaryResourceGroupName=arm-testing-secondary
+```
+
+Most of the time you will be deploying resource using Resource Group scope, but there are objects, that are on Subscription level. Example is Resource Group object (belongs to subscription, not resource group), subscription-level RBAC, subscription-level policies such as Security Center etc. Subscription-scoped ARM templates can create Resource Groups and use different API (and CLI command). Let's create two new resource groups via template.
+
+```powershell
+az deployment create -l westeurope `
+    --template-file subscriptionLevel.json
+```
+
+Finally let's use nested templates to orchestrate complete deployment process. Note in practical life with more complex templates you will use rather linked templates (store individual templates in storage account or Git repository) to make master JSON smaller, more readable and included templates more reusable.
+```powershell
+az deployment create -l westeurope `
+    --template-file solution.json `
+    --parameters "@solution.parameters.json"
+```
+
+We have learned basic ARM template structures. Delete environment and let's start deploying some real scenarios.
+```powershell
+az group delete -y --no-wait -n arm-testing
+az group delete -y --no-wait -n arm-testing-secondary
+az group delete -y --no-wait -n arm-newtesting
+az group delete -y --no-wait -n arm-newtesting-secondary
+```
+
+
 
 ## Provision Azure SQL via GUI
 

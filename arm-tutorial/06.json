@@ -1,0 +1,72 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "ipNamePrefix": {
+            "type": "string",
+            "metadata": {
+                "description": "IP address name prefix"
+            }
+        },
+        "environment": {
+            "type": "string",
+            "allowedValues": [
+                "PROD",
+                "QA",
+                "TEST",
+                "DEV"
+            ],
+            "metadata": {
+                "description": "Environment in which IP address will be used"
+            }
+        },
+        "secondaryResourceGroupName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of secondary Resource Group"
+            }
+        }
+    },
+    "variables": {
+        "myLocation": "[resourceGroup().location]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[concat(parameters('ipNamePrefix'),'-',parameters('environment'))]",
+            "apiVersion": "2016-03-30",
+            "location": "[variables('myLocation')]",
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic"
+            }
+        },
+        {
+            "apiVersion": "2017-05-10",
+            "name": "nestedTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "resourceGroup": "[parameters('secondaryResourceGroupName')]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "Microsoft.Network/publicIPAddresses",
+                            "name": "[concat(parameters('ipNamePrefix'),'-secondary-',parameters('environment'))]",
+                            "apiVersion": "2016-03-30",
+                            "location": "[variables('myLocation')]",
+                            "properties": {
+                                "publicIPAllocationMethod": "Dynamic"
+                            }
+                        }
+                    ]
+                },
+                "parameters": {}
+            }
+        }
+    ],
+    "outputs": {}
+}

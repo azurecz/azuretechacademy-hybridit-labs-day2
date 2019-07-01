@@ -1,0 +1,121 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "ipNamePrefix": {
+            "type": "string",
+            "metadata": {
+                "description": "IP address name prefix"
+            }
+        },
+        "environment": {
+            "type": "string",
+            "allowedValues": [
+                "PROD",
+                "QA",
+                "TEST",
+                "DEV"
+            ],
+            "metadata": {
+                "description": "Environment in which IP address will be used"
+            }
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2018-05-01",
+            "location": "westeurope",
+            "name": "arm-newtesting"
+        },
+        {
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2018-05-01",
+            "location": "westeurope",
+            "name": "arm-newtesting-secondary"
+        },
+        {
+            "apiVersion": "2018-05-01",
+            "name": "primaryNested",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/resourceGroups', 'arm-newtesting')]"
+            ],
+            "resourceGroup": "arm-newtesting",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "Microsoft.Network/publicIPAddresses",
+                            "name": "[concat(parameters('ipNamePrefix'),'-',parameters('environment'))]",
+                            "apiVersion": "2016-03-30",
+                            "location": "westeurope",
+                            "properties": {
+                                "publicIPAllocationMethod": "Dynamic"
+                            }
+                        },
+                        {
+                            "type": "Microsoft.Storage/storageAccounts",
+                            "name": "[concat('mystorage', uniqueString(subscription().Id, 'arm-newtesting'))]",
+                            "apiVersion": "2018-07-01",
+                            "location": "westeurope",
+                            "sku": {
+                                "name": "Standard_LRS"
+                            },
+                            "kind": "StorageV2"
+                        },
+                        {
+                            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+                            "apiVersion": "2019-04-01",
+                            "name": "[concat('mystorage', uniqueString(subscription().Id, 'arm-newtesting'), '/default/mycontainer')]",
+                            "dependsOn": [
+                                "[resourceId('Microsoft.Storage/storageAccounts', concat('mystorage', uniqueString(subscription().Id, 'arm-newtesting')))]"
+                            ],
+                            "properties": {
+                                "publicAccess": "Container"
+                            }
+                        }
+                    ]
+                },
+                "parameters": {}
+            }
+        },
+        {
+            "apiVersion": "2018-05-01",
+            "name": "secondaryNested",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/resourceGroups', 'arm-newtesting-secondary')]"
+            ],
+            "resourceGroup": "arm-newtesting-secondary",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "Microsoft.Network/publicIPAddresses",
+                            "name": "[concat(parameters('ipNamePrefix'),'-secondary-',parameters('environment'))]",
+                            "apiVersion": "2016-03-30",
+                            "location": "westeurope",
+                            "properties": {
+                                "publicIPAllocationMethod": "Dynamic"
+                            }
+                        }
+                    ]
+                },
+                "parameters": {}
+            }
+        }
+    ],
+    "outputs": {}
+}
