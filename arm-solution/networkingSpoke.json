@@ -75,7 +75,12 @@
                             "addressPrefix": "[parameters('webSubnetRange')]",
                             "networkSecurityGroup": {
                                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', concat(parameters('vnetName'), '-web-nsg'))]"
-                            }
+                            },
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.Sql"
+                                }
+                            ]
                         }
                     },
                     {

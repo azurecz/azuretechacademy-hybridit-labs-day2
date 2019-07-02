@@ -190,7 +190,7 @@ az group deployment create -g arm-hub-networking `
     --template-file networkingHub.json
 ```
 
-For spoke networks we will create universal template that we can reuse whenever we need the same spoke environment with web subnet.
+For spoke networks we will create universal template that we can reuse whenever we need the same spoke environment with web subnet. Also note that we enable Microsoft.Sql Service Endpoint capability on web subnet, so we can later on allow access from this subnet to Azure SQL without exposing it to Internet.
 
 ```powershell
 az group create -n arm-spoke1-networking -l westeurope
@@ -303,6 +303,17 @@ az deployment create --template-file networkingMaster.json `
 There are two things we want to fix and enhance:
 - One of peerings is not in connected state. Fix the template and redeploy.
 - We now want to have additional subnet in spoke network with name app and range 10.x.1.0/24. Modify template and master template accordingly and redeploy.
+
+## Add firewall rules / VNET access for Azure SQL
+We have deployed Azure SQL, but default there is firewall preventing any access to it. We could allow whole Azure to get access or whitelist specific public IPs, but for more security we want to enable access only from web subnet in spoke1-net.
+
+There is sqlWithVnet.json and sqlWithVnet.parameters.json with added parameters for Vnet and resource deployment. Make sure you update sqlWithVnet.parameters.json with reference to Key Vault secret you created earlier in the lab.
+
+```powershell
+az group deployment create -g arm-sql `
+    --template-file sqlWithVnet.json `
+    --parameters "@sqlWithVnet.parameters.json"
+```
 
 ## Learn how to use and upgrade Virtual Machine Scale Set in spoke1 on Linux with VM extensions and ARM
 
