@@ -424,6 +424,7 @@ az vmss update-instances --instance-ids '*' `
 
 Note there is downtime. Our application is suitable for rolling upgrade so in practice you would upgrade instances one by one or use automated upgrading policy.
 
+Also note that you can use custom golden images if you do not want to automate only with VM extensions. VMSS is somewhat similar to container orchestration, but with full VMs so can work in scenarios where containers are not an option. VMSS are great for web farms, computing, rendering and HPC clusters, Big Data clusters and are often used to build PaaS on top such as with Azure Kubernetes Service or Azure Databricks.
 
 ## Create ARM template for Windows-based web servers in spoke2 including Azure Backup and basic monitoring
 
