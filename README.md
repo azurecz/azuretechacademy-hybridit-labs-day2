@@ -316,10 +316,116 @@ az group deployment create -g arm-sql `
 ```
 
 ## Learn how to use and upgrade Virtual Machine Scale Set in spoke1 on Linux with VM extensions and ARM
+Although in production we should use ARM templates for automation, let's also practice CLI. In this section we will learn how to use Virtual Machine Scale Set to manage web farm (also great for computing clusters etc.) and custom script extensions to install or update application.
 
-## Create ARM template for Windows-based web servers in spoke2
+Let's create VMSS with Load Balancer. We will intentionaly use older image so we can practice upgrading images in VMSS later on.
 
-## Create ARM template for shared monitoring environment and Azure Backup
+```powershell
+az group create -n web-rg -l westeurope
+az vmss create -n webscaleset `
+    -g web-rg `
+    --image "Canonical:UbuntuServer:18.04-LTS:18.04.201905290" `
+    --instance-count 2 `
+    --vm-sku Standard_B1ms `
+    --admin-username labuser `
+    --admin-password Azure12345678 `
+    --authentication-type password `
+    --public-ip-address web-lb-ip `
+    --subnet $(az network vnet subnet show -g arm-spoke1-networking --name web --vnet-name spoke1-net --query id -o tsv) `
+    --lb web-lb `
+    --upgrade-policy-mode Manual
+```
+
+Next we will create LB health probe and rules. 
+
+```powershell
+az network lb probe create -g web-rg `
+    --lb-name web-lb `
+    --name webprobe `
+    --protocol Http `
+    --path '/' `
+    --port 80
+az network lb rule create -g web-rg `
+    --lb-name web-lb `
+    --name myHTTPRule `
+    --protocol tcp `
+    --frontend-port 80 `
+    --backend-port 80 `
+    --frontend-ip-name loadBalancerFrontEnd `
+    --backend-pool-name web-lbBEPool `
+    --probe-name webprobe
+```
+
+We have our webfarm running, but there is no application installed. We will use custom script to that. In practice we would use our own storage account to store both script and application code similar to how we did linked ARM templates previously. For simplicity we will use publicly available URLs on GitHub for both script (part of this repo) and application package (part of different repo).
+
+We will add VM Extension with custom script. Make sure you modify protected-settings to point to your SQL URL. This step will update VMSS model, but not actual VMs as we have set upgrade policy to Manual.
+
+```powershell
+az vmss extension set --vmss-name webscaleset `
+    --name CustomScript `
+    -g web-rg `
+    --version 2.0 `
+    --publisher Microsoft.Azure.Extensions `
+    --protected-settings '{\"commandToExecute\": \"bash installapp-v1.sh dbnpu7hrlw5l2ks.database.windows.net labuser Azure12345678\"}' `
+    --settings '{\"fileUris\": [\"https://raw.githubusercontent.com/azurecz/azuretechacademy-hybridit-labs-day2/master/scripts/installapp-v1.sh\"]}'
+```
+
+Go to GUI and check VMSS Instances. You should see we are not running latest VMSS model. Let's initiate manual upgrade. We can do it one by one, but for not let's upgrade all VMs in VMSS at once.
+
+```powershell
+az vmss update-instances --instance-ids '*' `
+    -n webscaleset `
+    -g web-rg
+```
+
+When upgrade is finished our application should be running. Check public IP of your VMSS and connect to it via browser. You will see simple todo app connected to our Azure SQL Database - create some todo item. Also check publicip/api/version. You should see version 1 string and responses comming from both servers (balancing works and we have not set any session persistency).
+
+```powershell
+$appIp = $(az network public-ip show -g web-rg -n web-lb-ip --query ipAddress -o tsv)
+Invoke-RestMethod $appIp/api/version -DisableKeepAlive
+Invoke-RestMethod $appIp/api/version -DisableKeepAlive
+Invoke-RestMethod $appIp/api/version -DisableKeepAlive
+Invoke-RestMethod $appIp/api/version -DisableKeepAlive
+```
+
+Let's now upgrade application by changing custom script extension to new script that downloads newer versions. After this is done initiate manual upgrade on all nodes. Note in practice you may do this one by one to prevent publishing changes that does not work. You can also automate this process by setting upgrade policy to Rolling, but for this lab we will do things manually. Do not forget to modify protected-settings to fit your DB!
+
+```powershell
+az vmss extension set --vmss-name webscaleset `
+    --name CustomScript `
+    -g web-rg `
+    --version 2.0 `
+    --publisher Microsoft.Azure.Extensions `
+    --protected-settings '{\"commandToExecute\": \"bash installapp-v2.sh dbnpu7hrlw5l2ks.database.windows.net labuser Azure12345678\"}' `
+    --settings '{\"fileUris\": [\"https://raw.githubusercontent.com/azurecz/azuretechacademy-hybridit-labs-day2/master/scripts/installapp-v2.sh\"]}'
+
+az vmss update-instances --instance-ids '*' `
+    -n webscaleset `
+    -g web-rg
+```
+
+After a while your app should have v2 code.
+
+```powershell
+Invoke-RestMethod $appIp/api/version -DisableKeepAlive
+```
+
+Azure base images are updated to include latest patches. As our application deployment is automated, we can change VMSS model to include newer OS image version. Note this process also can be automated (auto OS upgrade mode on VMSS), but we will do this manually.
+
+```powershell
+az vmss update -n webscaleset `
+    -g web-rg `
+    --set virtualMachineProfile.storageProfile.imageReference.version=18.04.201906271
+
+az vmss update-instances --instance-ids '*' `
+    -n webscaleset `
+    -g web-rg
+```
+
+Note there is downtime. Our application is suitable for rolling upgrade so in practice you would upgrade instances one by one or use automated upgrading policy.
+
+
+## Create ARM template for Windows-based web servers in spoke2 including Azure Backup and basic monitoring
 
 ## Use Azure DevOps to version and orchestrate deployment of infrastructure templates
 
