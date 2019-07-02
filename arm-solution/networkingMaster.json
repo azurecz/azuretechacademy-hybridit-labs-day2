@@ -1,0 +1,229 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "baseUrl": {
+            "type": "string"
+        },
+        "storageToken": {
+            "type": "securestring"
+        }
+    },
+    "variables": {
+        "storageContainer": "deploy",
+        "containerUrl": "[concat(parameters('baseUrl'), variables('storageContainer'), '/')]",
+        "hubTemplateUrl": "[concat(variables('containerUrl'), 'networkingHub.json?', parameters('storageToken'))]",
+        "spokeTemplateUrl": "[concat(variables('containerUrl'), 'networkingSpoke.json?', parameters('storageToken'))]",
+        "peeringTemplateUrl": "[concat(variables('containerUrl'), 'networkingPeering.json?', parameters('storageToken'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2018-05-01",
+            "location": "westeurope",
+            "name": "arm-hub-networking"
+        },
+        {
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2018-05-01",
+            "location": "westeurope",
+            "name": "arm-spoke1-networking"
+        },
+        {
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2018-05-01",
+            "location": "westeurope",
+            "name": "arm-spoke2-networking"
+        },
+        {
+            "name": "hubNetworking",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/resourceGroups', 'arm-hub-networking')]"
+            ],
+            "resourceGroup": "arm-hub-networking",
+            "apiVersion": "2018-05-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('hubTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {}
+            }
+        },
+        {
+            "name": "spoke1Networking",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/resourceGroups', 'arm-spoke1-networking')]"
+            ],
+            "resourceGroup": "arm-spoke1-networking",
+            "apiVersion": "2018-05-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('spokeTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "vnetName": {
+                        "value": "spoke1-net"
+                    },
+                    "ipRange": {
+                        "value": "10.1.0.0/16"
+                    },
+                    "webSubnetRange": {
+                        "value": "10.1.0.0/24"
+                    },
+                    "appSubnetRange": {
+                        "value": "10.1.1.0/24"
+                    }
+                }
+            }
+        },
+        {
+            "name": "spoke2Networking",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/resourceGroups', 'arm-spoke2-networking')]"
+            ],
+            "resourceGroup": "arm-spoke2-networking",
+            "apiVersion": "2018-05-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('spokeTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "vnetName": {
+                        "value": "spoke2-net"
+                    },
+                    "ipRange": {
+                        "value": "10.2.0.0/16"
+                    },
+                    "webSubnetRange": {
+                        "value": "10.2.0.0/24"
+                    },
+                    "appSubnetRange": {
+                        "value": "10.2.1.0/24"
+                    }
+                }
+            }
+        },
+        {
+            "name": "peerHubToSpoke1",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "hubNetworking",
+                "spoke1Networking"
+            ],
+            "resourceGroup": "arm-hub-networking",
+            "apiVersion": "2018-05-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('peeringTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "sourceVnetName": {
+                        "value": "hub-net"
+                    },
+                    "destinationVnetName": {
+                        "value": "spoke1-net"
+                    },
+                    "destinationVnetResourceGroup": {
+                        "value": "arm-spoke1-networking"
+                    }
+                }
+            }
+        },
+        {
+            "name": "peerHubToSpoke2",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "hubNetworking",
+                "spoke2Networking"
+            ],
+            "resourceGroup": "arm-hub-networking",
+            "apiVersion": "2018-05-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('peeringTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "sourceVnetName": {
+                        "value": "hub-net"
+                    },
+                    "destinationVnetName": {
+                        "value": "spoke2-net"
+                    },
+                    "destinationVnetResourceGroup": {
+                        "value": "arm-spoke2-networking"
+                    }
+                }
+            }
+        },
+        {
+            "name": "peerSpoke1ToHub",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "hubNetworking",
+                "spoke1Networking"
+            ],
+            "resourceGroup": "arm-spoke1-networking",
+            "apiVersion": "2018-05-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('peeringTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "sourceVnetName": {
+                        "value": "spoke1-net"
+                    },
+                    "destinationVnetName": {
+                        "value": "hub-net"
+                    },
+                    "destinationVnetResourceGroup": {
+                        "value": "arm-hub-networking"
+                    }
+                }
+            }
+        },
+        {
+            "name": "peerSpoke2ToHub",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "hubNetworking",
+                "spoke2Networking"
+            ],
+            "resourceGroup": "arm-spoke2-networking",
+            "apiVersion": "2018-05-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('peeringTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "sourceVnetName": {
+                        "value": "spoke2-net"
+                    },
+                    "destinationVnetName": {
+                        "value": "hub-net"
+                    },
+                    "destinationVnetResourceGroup": {
+                        "value": "arm-hub-networking"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}

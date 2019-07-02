@@ -10,7 +10,7 @@
   - 10 or more B-series VM vCPUs in region West Europe
 - Precreated Azure DevOps organization with full rights for purpose of this Lab, instructions in [documentation](https://docs.microsoft.com/en-us/azure/devops/organizations/accounts/create-organization?view=azure-devops)
 
-## Learn ARM template basics - parameters, variables, resources, copy loop, uniquestring, resourceId, reference, outputs
+## ARM template basics
 First let's learn some ARM template basics. Jump to arm-tutorial folder.
 
 Deploy simple template to create Public IP.
@@ -136,8 +136,8 @@ Another approach is to create resources using GUI and check results using one of
 Go to arm-labs folder. There is template sql.json. Let's deploy it, but expect few issues we will solve as we go.
 
 ```powershell
-az group create -n arm-app -l westeurope
-az group deployment create -g arm-app `
+az group create -n arm-sql -l westeurope
+az group deployment create -g arm-sql `
     --template-file sql.json `
     --parameters "@sql.parameters.json"
 ```
@@ -181,21 +181,138 @@ Modify your template parameters file to include reference to KeyVault secret.
 }
 ```
 
-## Create ARM template for networking
+## Create ARM templates for networking
+First let's create hub network with jump subnet and NSG, GatewaySubnet (this is where VPN can be deployed) and AD DC subnet and NSG.
+
+```powershell
+az group create -n arm-hub-networking -l westeurope
+az group deployment create -g arm-hub-networking `
+    --template-file networkingHub.json
+```
+
+For spoke networks we will create universal template that we can reuse whenever we need the same spoke environment with web subnet.
+
+```powershell
+az group create -n arm-spoke1-networking -l westeurope
+az group deployment create -g arm-spoke1-networking `
+    --template-file networkingSpoke.json `
+    --parameters ipRange="10.1.0.0/16" `
+    --parameters webSubnetRange="10.1.0.0/24" `
+    --parameters vnetName=spoke1-net
+```
+
+Run template with different parameters to create spoke2 environment.
+
+```powershell
+az group create -n arm-spoke2-networking -l westeurope
+az group deployment create -g arm-spoke2-networking `
+    --template-file networkingSpoke.json `
+    --parameters ipRange="10.2.0.0/16" `
+    --parameters webSubnetRange="10.2.0.0/24" `
+    --parameters vnetName=spoke2-net
+```
+
+We now need to do VNET peerings between sub and spokes. Let's create universal template that configures single peering from source to destination and use it multiple times to get topology we need.
+
+```powershell
+az group deployment create -g arm-hub-networking `
+    --template-file networkingPeering.json `
+    --parameters sourceVnetName=hub-net `
+    --parameters destinationVnetName=spoke1-net `
+    --parameters destinationVnetResourceGroup=arm-spoke1-networking
+
+az group deployment create -g arm-hub-networking `
+    --template-file networkingPeering.json `
+    --parameters sourceVnetName=hub-net `
+    --parameters destinationVnetName=spoke2-net `
+    --parameters destinationVnetResourceGroup=arm-spoke2-networking
+
+az group deployment create -g arm-spoke1-networking `
+    --template-file networkingPeering.json `
+    --parameters sourceVnetName=spoke1-net `
+    --parameters destinationVnetName=hub-net `
+    --parameters destinationVnetResourceGroup=arm-hub-networking
+
+az group deployment create -g arm-spoke2-networking `
+    --template-file networkingPeering.json `
+    --parameters sourceVnetName=spoke2-net `
+    --parameters destinationVnetName=hub-net `
+    --parameters destinationVnetResourceGroup=arm-hub-networking
+```
+
+## Create ARM master template for networking
+We have created templates for networking, but need to deploy with right parameters in right order. We will want to orchestrate this. One way of doing that is to use Azure DevOps as we will do later in this lab. For now we will use master ARM template and call linked templates we have to orchestrate complete networking deployment.
+
+First let's delete all networking so we can start over.
+```powershell
+az group delete -y --no-wait -n arm-hub-networking
+az group delete -y --no-wait -n arm-spoke1-networking
+az group delete -y --no-wait -n arm-spoke2-networking
+```
+
+We will create storage account to host our linked templates and upload.
+```powershell
+# Make sure you set storage account name to something globaly unique
+$storageName = "tomasuniquename1234"
+
+# Create storage account
+az storage account create -g arm-deployment-artifacts -n $storageName
+
+# Get storage connection string
+$storageConnectionString = $(az storage account show-connection-string -g arm-deployment-artifacts -n $storageName -o tsv)
+
+# Create storage container
+az storage container create -n deploy --connection-string $storageConnectionString
+
+# Upload files
+az storage blob upload -f networkingHub.json `
+    -c deploy `
+    -n networkingHub.json `
+    --connection-string $storageConnectionString
+
+az storage blob upload -f networkingSpoke.json `
+    -c deploy `
+    -n networkingSpoke.json `
+    --connection-string $storageConnectionString
+
+az storage blob upload -f networkingPeering.json `
+    -c deploy `
+    -n networkingPeering.json `
+    --connection-string $storageConnectionString
+```
+
+Storage account by default does not allow anonyumous access. Let's generate SAS token so ARM master template can access linked files securely.
+
+```powershell
+az storage container generate-sas -n deploy `
+    --connection-string $storageConnectionString `
+    --https-only `
+    --permissions r `
+    --expiry "2030-1-1T00:00Z" `
+    -o tsv
+```
+
+Modify networkingMaster.parameters.json file with baseUrl of your storage account and storageToken you received with previous command.
+
+```powershell
+az deployment create --template-file networkingMaster.json `
+    --parameters "@networkingMaster.parameters.json" `
+    -l westeurope
+```
+
+There are two things we want to fix and enhance:
+- One of peerings is not in connected state. Fix the template and redeploy.
+- We now want to have additional subnet in spoke network with name app and range 10.x.1.0/24. Modify template and master template accordingly and redeploy.
+
+## Learn how to use and upgrade Virtual Machine Scale Set in spoke1 on Linux with VM extensions and ARM
+
+## Create ARM template for Windows-based web servers in spoke2
 
 ## Create ARM template for shared monitoring environment and Azure Backup
 
-## Learn how to use and upgrade Virtual Machine Scale Set on Linux with VM extensions
+## Use Azure DevOps to version and orchestrate deployment of infrastructure templates
 
-## Create ARM template for Linux-based VMSS with custom script extension
-
-## Create ARM template for Windows-based VMSS with PowerShell DSC automation
-
-## Create Master ARM template to include complete solution
-
-## Use Azure DevOps Repos to store and maintain ARM templates
-
-## Use Azure DevOps Pipelines to orchestrate desired state infrastructure lifecycle (part of CI/CD strategy)
+## Use Azure Automation PowerShell DSC to manage state of Windows VMs
 
 ## Automation and governance with Azure Bluprints
 Consider following scenario. We have created hub subcription with centralized components such as Azure Firewall, Azure VPN and Domain Controller. Application projects are deployed in spoke subscriptions that allow connectivity via hub network. Suppose for certain types of projects we have following governance needs:

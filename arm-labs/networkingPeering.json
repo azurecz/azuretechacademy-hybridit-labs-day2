@@ -1,0 +1,45 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "sourceVnetName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of source VNET"
+            }
+        },
+        "destinationVnetName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of destination VNET"
+            }
+        },
+        "destinationVnetResourceGroup": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of destination VNET Resource Group"
+            }
+        }
+    },
+    "variables": {
+        "destinationVnetId": "[resourceId(parameters('destinationVnetResourceGroup'), 'Microsoft.Network/virtualNetworks', parameters('destinationVnetName'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+            "comments": "Create peering from azure office to mainRegion",
+            "name": "[concat(parameters('sourceVnetName'), '/peerTo', parameters('destinationVnetName'))]",
+            "apiVersion": "2018-08-01",
+            "properties": {
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": true,
+                "allowGatewayTransit": false,
+                "useRemoteGateways": false,
+                "remoteVirtualNetwork": {
+                    "id": "[variables('destinationVnetId')]"
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}
