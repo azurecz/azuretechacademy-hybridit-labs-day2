@@ -428,9 +428,28 @@ Also note that you can use custom golden images if you do not want to automate o
 
 ## Create ARM template for Windows-based web servers in spoke2 including Azure Backup and basic monitoring
 
+TODO JJ
+0. sit podle navodu vyse - spoke2
+1. rucne v UI si udelat Log Analytics workspace, backup vault
+2. ARM na Windows VM, se zapnutym backupem a monitoringem - jako parametr
+
 ## Use Azure DevOps to version and orchestrate deployment of infrastructure templates
 
+TODO JJ
+1. DevOps na deployment ARM infrastruktury -> 1 prostredi DEV - kde uz je pripraveny sql a vnet
+
 ## Use Azure Automation PowerShell DSC to manage state of Windows VMs
+
+TODO JJ
+1. DevOps Deployment group, agent na to VM kde to pobezi
+2. DevOps release pipeline na nasazeni pres deployment group task
+3. instalace IIS nebo DSC
+4. aplikace https://github.com/tkubica12/dotnetcore-sqldb-tutorial/tree/master/linux-v1
+5. konfigurace appsettings.json napojit na SQL pres ENV
+
+## DevOps homework
+
+pripravit 2. prostredi pro PROD - jiny spoke, jiny sql pres DEVOPS
 
 ## Automation and governance with Azure Bluprints
 Consider following scenario. We have created hub subcription with centralized components such as Azure Firewall, Azure VPN and Domain Controller. Application projects are deployed in spoke subscriptions that allow connectivity via hub network. Suppose for certain types of projects we have following governance needs:
