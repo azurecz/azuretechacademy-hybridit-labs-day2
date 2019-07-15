@@ -428,10 +428,18 @@ Also note that you can use custom golden images if you do not want to automate o
 
 ## Create ARM template for Windows-based web servers in spoke2 including Azure Backup and basic monitoring
 
+Check you have correctly created virtual networks. We will use spoke2-net network.
+
+Create these additional resources (remember Day1 training)
+
+1. Create Monitoring resources and configure to capture CPU etc.
+2. Create Backup vault
+
+Now create ARM template for Windows VM with enabled monitoring and backup
+
 TODO JJ
-0. sit podle navodu vyse - spoke2
-1. rucne v UI si udelat Log Analytics workspace, backup vault
-2. ARM na Windows VM, se zapnutym backupem a monitoringem - jako parametr
+1. Create Windows VM from Portal and copy-paste template
+2. modify template
 
 ## Use Azure DevOps to version and orchestrate deployment of infrastructure templates
 
