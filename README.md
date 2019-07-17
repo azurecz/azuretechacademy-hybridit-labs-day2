@@ -562,6 +562,8 @@ Now we will create first Azure DevOps Pipeline to deploy ARM template with Windo
 
 Repeat it for all other servers, you can use different pipeline.
 
+![CPWEB-CD release pipeline](/media/devops-cpweb-cd.png)
+
 ## Use Azure Automation PowerShell DSC to manage state of Windows VMs
 
 TODO JJ
