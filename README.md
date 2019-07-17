@@ -540,8 +540,27 @@ Use following links to prepare template
 
 ## Use Azure DevOps to version and orchestrate deployment of infrastructure templates
 
-TODO JJ
-1. DevOps na deployment ARM infrastruktury -> 1 prostredi DEV - kde uz je pripraveny sql a vnet
+Check you have Azure DevOps project already created, e.g. try to navigate Repos. 
+The aim is to deploy ARM template with Windows Web server cpvmweb into resource group cp-vmweb-we-rg
+
+First we have to clone GitHub repo into our Azure Repos
+
+1. Navigrate to Repos
+2. Import Repository and type link to this GitHub (https://github.com/azurecz/azuretechacademy-hybridit-labs-day2.git)
+
+Now we will create first Azure DevOps Pipeline to deploy ARM template with Windows Web server cpvmweb into resource group cp-vmweb-we-rg
+
+1. Create new Release Pipeline with name CPWEB-CD, select Empty job, Stage 1 call DEV
+2. Add artifact - link Azure Repos and change Source alias to _source
+3. Configure DEV stage tasks
+    - add Azure Resource Group Deployment task
+    - action Create or Update resource group
+    - resource group name cp-vmweb-we-rg
+    - template select deploy-vmwin.json
+    - paramaters select deploy-wmwin-web.params.json and override -adminPassword=Azure-123123
+4. Create Release and wait for successfull deployment
+
+Repeat it for all other servers, you can use different pipeline.
 
 ## Use Azure Automation PowerShell DSC to manage state of Windows VMs
 
