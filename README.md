@@ -430,10 +430,10 @@ Also note that you can use custom golden images if you do not want to automate o
 
 Check you have correctly created virtual networks. We will use spoke2-net network.
 
-Create these additional resources (remember Day1 training)
+Create these additional resources (remember Day1 training) in resource group cp-infra-rg
 
-1. Create Monitoring resources and configure to capture CPU etc.
-2. Create Backup vault
+1. Create Monitoring resources cpmonitor and configure to capture CPU etc.
+2. Create Backup vault cpvault
 
 Create **ARM template for Windows VM**
 
@@ -473,7 +473,57 @@ az group deployment create -g cp-vmweb-we-rg `
     --parameters adminPassword=Azure-123123
 ```
 
-Create **ARM template to enable VM monitoring and backup**
+Update **ARM template to enable VM monitoring**
+
+1. Go to folder arm-vmwin and update generic Windows VM ARM template [deploy-vmwin.json](arm-vmwin/deploy-vmwin.json)
+2. Add new resouce into ARM template for Monitoring Agent
+    - copy extension from template https://github.com/Azure/azure-quickstart-templates/blob/master/201-oms-extension-windows-vm/azuredeploy.json
+    - add parameter workspaceName
+3. Add new resource into ARM template for Dependency Agent
+4. Run template for deployment to update VMs - Windows jump server (cpmvmjump), Windows AD server (cpvmad), Windows Web server (cpvmweb)
+
+```powershell
+az group deployment create -g cp-vmweb-we-rg `
+    --template-file deploy-vmfullwin.json `
+    --parameters deploy-wmwin-web.params.json `
+    --parameters adminPassword=Azure-123123 `
+    --parameters workspaceName=cpmonitor
+```
+
+Use following links to prepare template
+
+- Azure Monitor https://docs.microsoft.com/en-us/azure/azure-monitor/platform/template-workspace-configuration
+- Agent https://azure.microsoft.com/en-us/resources/templates/201-oms-extension-windows-vm/
+
+Create **ARM template for VM backup**
+
+1. Go to folder arm-vmwin and create generic Backup ARM template [deploy-backup.json](arm-vmwin/deploy-backup.json)
+2. Add Backup resource in ARM template
+    - copy resource from template https://github.com/Azure/azure-quickstart-templates/blob/master/101-recovery-services-create-vm-and-configure-backup/azuredeploy.json
+    - copy and update variables from template
+    - you will have parameters
+        - virtualMachineName
+        - virtualMachineResourceGroup
+        - vaultName
+3. Run template for deployment to update Backup vault - for Windows jump server (cpmvmjump), Windows AD server (cpvmad), Windows Web server (cpvmweb)
+
+```powershell
+az group deployment create -g cp-infra-rg `
+    --template-file deploy-backup.json `
+    --parameters deploy-backup-web.params.json
+az group deployment create -g cp-infra-rg `
+    --template-file deploy-backup.json `
+    --parameters deploy-backup-jump.params.json
+az group deployment create -g cp-infra-rg `
+    --template-file deploy-backup.json `
+    --parameters deploy-backup-ad.params.json
+```
+
+Use following links to prepare template
+
+- Backup https://docs.microsoft.com/en-us/azure/backup/backup-rm-template-samples
+
+*Warning: You cannot add Backup ARM resource into VM ARM template, you cannot refference Backup vault in another resource group than VM is.*
 
 ## Use Azure DevOps to version and orchestrate deployment of infrastructure templates
 
