@@ -478,7 +478,7 @@ Update **ARM template to enable VM monitoring**
 1. Go to folder arm-vmwin and update generic Windows VM ARM template [deploy-vmwin.json](arm-vmwin/deploy-vmwin.json)
 2. Add new resouce into ARM template for Monitoring Agent
     - copy extension from template https://github.com/Azure/azure-quickstart-templates/blob/master/201-oms-extension-windows-vm/azuredeploy.json
-    - add parameter workspaceName
+    - add parameter workspaceName, workspaceResourceGroup
 3. Add new resource into ARM template for Dependency Agent
 4. Run template for deployment to update VMs - Windows jump server (cpmvmjump), Windows AD server (cpvmad), Windows Web server (cpvmweb)
 
@@ -487,7 +487,20 @@ az group deployment create -g cp-vmweb-we-rg `
     --template-file deploy-vmfullwin.json `
     --parameters deploy-wmwin-web.params.json `
     --parameters adminPassword=Azure-123123 `
-    --parameters workspaceName=cpmonitor
+    --parameters workspaceName=cpmonitor `
+    --parameters workspaceResourceGroup=cp-infra
+az group deployment create -g cp-vmjump-we-rg `
+    --template-file deploy-vmfullwin.json `
+    --parameters deploy-wmwin-jump.params.json `
+    --parameters adminPassword=Azure-123123 `
+    --parameters workspaceName=cpmonitor `
+    --parameters workspaceResourceGroup=cp-infra
+az group deployment create -g cp-vmad-we-rg `
+    --template-file deploy-vmfullwin.json `
+    --parameters deploy-wmwin-ad.params.json `
+    --parameters adminPassword=Azure-123123 `
+    --parameters workspaceName=cpmonitor `
+    --parameters workspaceResourceGroup=cp-infra
 ```
 
 Use following links to prepare template
