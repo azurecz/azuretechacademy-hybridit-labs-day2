@@ -564,18 +564,48 @@ Repeat it for all other servers, you can use different pipeline.
 
 ![CPWEB-CD release pipeline](/media/devops-cpweb-cd.png)
 
-## Use Azure Automation PowerShell DSC to manage state of Windows VMs
+## Use Azure DevOps deployment agent to deploy application
 
-TODO JJ
-1. DevOps Deployment group, agent na to VM kde to pobezi
-2. DevOps release pipeline na nasazeni pres deployment group task
-3. instalace IIS nebo DSC
-4. aplikace https://github.com/tkubica12/dotnetcore-sqldb-tutorial/tree/master/linux-v1
-5. konfigurace appsettings.json napojit na SQL pres ENV
+The aim is to configure VM as Web server and install web application
+
+1. Open Pipelines and configure Deployment groups as target group machines
+    - new group CPWEB
+2. Open existing Release pipeline CPWEB-CD and change Azure deployment taks
+    - change Advanced deployment options for virtual machines
+    - setup connection to Azure Pipelines - generate token with permission scope [Agent Pools: Read & Manage], [Project and Team: Read], [Deployment Groups: Read & Manage]
+    - select deployment group CPWEB
+3. Run Release and ensure that cpvmweb has assigned as Target in CPWEB deployment group
+
+![CPWEB-CD release pipeline deployment agent](/media/devops-deploymentagent.png)
+
+![CPWEB-CD deployment group](/media/devops-deploymentgroup.png)
+
+Continue in configuration to run installation script on target server
+
+1. Open Repos to prepare script to configure Windows VM
+    - under folder scripts create/update file configwin.ps1 to install IIS (remember training Day1))
+2. Open existing Release pipeline CPWEB-CD and change Azure deployment taks
+    - add Deployment group job in DEV stage and select Deployment group CPWEB
+    - add PowerShell script task and select configwin.ps1
+3. Run release and verify that IIS is installed (try access public IP address of cpvmweb server)
+4. Open existing Release pipeline CPWEB-CD and change Azure deployment taks
+
+TODO:
+install dotnetcore
+https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script
+curl "https://download.visualstudio.microsoft.com/download/pr/a9bb6d52-5f3f-4f95-90c2-084c499e4e33/eba3019b555bb9327079a0b1142cc5b2/dotnet-hosting-2.2.6-win.exe" --output install.exe
+install.exe /install /quiet
+    
+aplikace https://github.com/tkubica12/dotnetcore-sqldb-tutorial/tree/master/linux-v1
+konfigurace appsettings.json napojit na SQL pres ENV
 
 ## DevOps homework
 
-pripravit 2. prostredi pro PROD - jiny spoke, jiny sql pres DEVOPS
+Configure new production deployment
+
+- deploy new resource group with VM cpvmwebprod in another peered network
+- deploy web application with Release pipeline CPWEB-CD as new stage PROD
+- connect to different PROD SQL server
 
 ## Automation and governance with Azure Bluprints
 Consider following scenario. We have created hub subcription with centralized components such as Azure Firewall, Azure VPN and Domain Controller. Application projects are deployed in spoke subscriptions that allow connectivity via hub network. Suppose for certain types of projects we have following governance needs:
