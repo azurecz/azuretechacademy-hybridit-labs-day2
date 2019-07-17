@@ -1,0 +1,27 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "virtualMachineName": {
+            "value": "cpvmjump"
+        },
+        "virtualMachineSize": {
+            "value": "Standard_D2s_v3"
+        },
+        "adminUsername": {
+            "value": "cpadmin"
+        },
+        "adminPassword": {
+            "value": null
+        },
+        "subnetName": {
+            "value": "jump"
+        },
+        "virtualNetworkName": {
+            "value": "hub-net"
+        },
+        "virtualNetworkResourceGroup": {
+            "value": "arm-hub-networking"
+        }
+    }
+}

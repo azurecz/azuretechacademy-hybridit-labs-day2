@@ -435,11 +435,45 @@ Create these additional resources (remember Day1 training)
 1. Create Monitoring resources and configure to capture CPU etc.
 2. Create Backup vault
 
-Now create ARM template for Windows VM with enabled monitoring and backup
+Create **ARM template for Windows VM**
 
-TODO JJ
-1. Create Windows VM from Portal and copy-paste template
-2. modify template
+1. Go to folder arm-vmwin and create generic Windows VM ARM template [deploy-vmwin.json](arm-vmwin/deploy-vmwin.json)
+2. Click create Windows VM from Azure Portal and Download template for automation (not create VM) and save it to deploy-vmwin.json and deploy-wmwin.params.json
+    - Name: cpvmweb
+    - Inbound port rules: None
+    - Virtual network: spoke2-net
+    - Public IP: yes
+    - NIC network security group: None
+3. Clean up and customize deploy-vmwin.json and deploy-wmwin.params.json to have it only this parameters
+    - virtualMachineName
+    - adminUsername
+    - adminPassword
+    - virtualMachineSize
+    - subnetName
+    - virtualNetworkName
+    - virtualNetworkResourceGroup
+    - other parameters remove and hardcode some logic e.g. new variable for: publicIpAddressName, networkInterfaceName, diagnosticsStorageAccountName
+4. Run template for deployment to create VMs - Windows jump server (cpmvmjump), Windows AD server (cpvmad), Windows Web server (cpvmweb)
+
+```powershell
+az group create -n cp-vmjump-we-rg -l westeurope
+az group deployment create -g cp-vmjump-we-rg `
+    --template-file deploy-vmwin.json `
+    --parameters deploy-wmwin-jump.params.json `
+    --parameters adminPassword=Azure-123123
+az group create -n cp-vmad-we-rg -l westeurope
+az group deployment create -g cp-vmad-we-rg `
+    --template-file deploy-vmwin.json `
+    --parameters deploy-wmwin-ad.params.json `
+    --parameters adminPassword=Azure-123123
+az group create -n cp-vmweb-we-rg -l westeurope
+az group deployment create -g cp-vmweb-we-rg `
+    --template-file deploy-vmwin.json `
+    --parameters deploy-wmwin-web.params.json `
+    --parameters adminPassword=Azure-123123
+```
+
+Create **ARM template to enable VM monitoring and backup**
 
 ## Use Azure DevOps to version and orchestrate deployment of infrastructure templates
 

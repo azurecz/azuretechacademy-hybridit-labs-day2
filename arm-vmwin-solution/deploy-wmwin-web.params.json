@@ -1,0 +1,27 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "virtualMachineName": {
+            "value": "cpvmweb"
+        },
+        "virtualMachineSize": {
+            "value": "Standard_D2s_v3"
+        },
+        "adminUsername": {
+            "value": "cpadmin"
+        },
+        "adminPassword": {
+            "value": null
+        },
+        "subnetName": {
+            "value": "web"
+        },
+        "virtualNetworkName": {
+            "value": "spoke2-net"
+        },
+        "virtualNetworkResourceGroup": {
+            "value": "arm-spoke2-networking"
+        }
+    }
+}
