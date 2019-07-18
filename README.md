@@ -587,17 +587,7 @@ Continue in configuration to run installation script on target server
 2. Open existing Release pipeline CPWEB-CD and change Azure deployment taks
     - add Deployment group job in DEV stage and select Deployment group CPWEB
     - add PowerShell script task and select configwin.ps1
-3. Run release and verify that IIS is installed (try access public IP address of cpvmweb server)
-4. Open existing Release pipeline CPWEB-CD and change Azure deployment taks
-
-TODO:
-install dotnetcore
-https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script
-curl "https://download.visualstudio.microsoft.com/download/pr/a9bb6d52-5f3f-4f95-90c2-084c499e4e33/eba3019b555bb9327079a0b1142cc5b2/dotnet-hosting-2.2.6-win.exe" --output install.exe
-install.exe /install /quiet
-    
-aplikace https://github.com/tkubica12/dotnetcore-sqldb-tutorial/tree/master/linux-v1
-konfigurace appsettings.json napojit na SQL pres ENV
+3. Run release and verify that application is installed (try access public IP address of cpvmweb server)
 
 ## DevOps homework
 
