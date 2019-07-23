@@ -580,7 +580,7 @@ The aim is to configure VM as Web server and install web application
 
 ![CPWEB-CD deployment group](/media/devops-deploymentgroup.png)
 
-Continue in configuration to run installation script on target server
+Continue configuration to run installation script on target server
 
 1. Open Repos to prepare script to configure Windows VM
     - under folder scripts create/update file configwin.ps1 to install IIS (remember training Day1))
@@ -588,6 +588,15 @@ Continue in configuration to run installation script on target server
     - add Deployment group job in DEV stage and select Deployment group CPWEB
     - add PowerShell script task and select configwin.ps1
 3. Run release and verify that application is installed (try access public IP address of cpvmweb server)
+
+Continue configuration to connect SQL server
+
+1. Open Repos to prepare script to configure application - setup ENV variables
+    - create new configwinapp.ps1, add parameters SQL server name (sqlServer), username (sqlUsername), password (sqlPassword)
+2. Open existing Release pipeline CPWEB-CD and change Azure deployment taks
+    - add PowerShell script task and select configwinapp.ps1 and add arguments for SQL server connection, e.g. -sqlServer "cpsqlserver1.database.windows.net" -sqlUsername "labuser" -sqlPassword "Azure-123123"
+
+![CPWEB-CD deployment group](/media/devops-deploymentgrouptask.png)
 
 ## DevOps homework
 
