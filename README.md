@@ -595,6 +595,9 @@ Continue configuration to connect SQL server
     - create new configwinapp.ps1, add parameters SQL server name (sqlServer), username (sqlUsername), password (sqlPassword)
 2. Open existing Release pipeline CPWEB-CD and change Azure deployment taks
     - add PowerShell script task and select configwinapp.ps1 and add arguments for SQL server connection, e.g. -sqlServer "cpsqlserver1.database.windows.net" -sqlUsername "labuser" -sqlPassword "Azure-123123"
+3. Move script parameters to Pipeline variables (optional)
+    - add new Pipeline variable e.g. sqlPassword as secret variable
+    - change powershell script arguments to -sqlPassword $(sqlPassword)
 
 ![CPWEB-CD deployment group](/media/devops-deploymentgrouptask.png)
 
