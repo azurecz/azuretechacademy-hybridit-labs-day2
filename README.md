@@ -644,7 +644,7 @@ Continue configuration to run installation script on target server
 2. Open existing Release pipeline CPWEB-CD and change Azure deployment taks
     - add Deployment group job in DEV stage and select Deployment group CPWEB
     - add PowerShell script task and select configwin.ps1
-3. Run release and verify that application is installed (try access public IP address of cpvmweb server)
+3. Run release and verify that application is installed. It does not have connection to Azure SQL so expect 502 error response, but this indicates IIS is running and app loaded, but crashed.
 
 Continue configuration to connect SQL server
 
@@ -652,11 +652,18 @@ Continue configuration to connect SQL server
     - create new configwinapp.ps1, add parameters SQL server name (sqlServer), username (sqlUsername), password (sqlPassword)
 2. Open existing Release pipeline CPWEB-CD and change Azure deployment taks
     - add PowerShell script task and select configwinapp.ps1 and add arguments for SQL server connection, e.g. -sqlServer "cpsqlserver1.database.windows.net" -sqlUsername "labuser" -sqlPassword "Azure-123123"
-3. Move script parameters to Pipeline variables (optional)
-    - add new Pipeline variable e.g. sqlPassword as secret variable
-    - change powershell script arguments to -sqlPassword $(sqlPassword)
+
+Connect to cpvmweb IP via browser and you should see application up and running.
 
 ![CPWEB-CD deployment group](/media/devops-deploymentgrouptask.png)
+
+We are using secrets directly in our pipeline, perhaps we can enhance that. You may create variables in Azure DevOps, store secrets there securely and use it. You can also for even better security map Azure DevOps variables to Key Vault. We already have one and we have stored our SQL password there previously so let's use it.
+
+1. In Pipelines, Library create new Variable Group
+2. Select Link secrets from Azure Key Vault as variables and reference Key Vault we created previously today and secret with SQL password.
+3. Edit Release pipeline and in Variables section link our Variable Group. Note you scope it all release phases or to selected stages (eg. set for Dev with one Key Vault and set for Prod).
+4. Reference variable in Powershell task parameters, eg. -sqlPassword $(mojeHeslo)
+
 
 ## DevOps homework
 
