@@ -596,14 +596,16 @@ First we have to clone GitHub repo into our Azure Repos
 Now we will create first Azure DevOps Pipeline to deploy ARM template with Windows Web server cpvmweb into resource group cp-vmweb-we-rg
 
 1. Create new Release Pipeline with name CPWEB-CD, select Empty job, Stage 1 call DEV
-2. Add artifact - link Azure Repos and change Source alias to _source
+2. Add artifact - link Azure Repos, branch master and change Source alias to _source
 3. Configure DEV stage tasks
     - add Azure Resource Group Deployment task
+    - select your subscription and click Authorize (if you cannot see it use Manage to configure connection manually)
     - action Create or Update resource group
     - resource group name cp-vmweb-we-rg
-    - template select deploy-vmwin.json
-    - paramaters select deploy-wmwin-web.params.json and override -adminPassword=Azure-123123
-4. Create Release and wait for successfull deployment
+    - location westeurope
+    - as template locate deploy-vmwin.json in arm-win-solution folder
+    - paramaters locate deploy-wmwin-web.params.json in arm-win-solution folder and override -adminPassword=Azure-123123
+4. Save, Create Release and wait for successfull deployment
 
 Repeat it for all other servers, you can use different pipeline.
 
