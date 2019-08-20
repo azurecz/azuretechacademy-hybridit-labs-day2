@@ -617,11 +617,21 @@ The aim is to configure VM as Web server and install web application
 
 1. Open Pipelines and configure Deployment groups as target group machines
     - new group CPWEB
-2. Open existing Release pipeline CPWEB-CD and change Azure deployment taks
-    - change Advanced deployment options for virtual machines
-    - setup connection to Azure Pipelines - generate token with permission scope [Agent Pools: Read & Manage], [Project and Team: Read], [Deployment Groups: Read & Manage]
-    - select deployment group CPWEB
-3. Run Release and ensure that cpvmweb has assigned as Target in CPWEB deployment group
+2. Prepare Personal Access Token for VM to authenticate against Azure DevOps to receive application builds and configurations
+    - Click your profile icon on top right corner and select Security
+    - Create new token with following permissions:
+      - [Agent Pools: Read & Manage]
+      - [Deployment Groups: Read & Manage]
+      - [Project and Team: Read]
+    - Do not forget to copy your token !
+3. Open existing Release pipeline CPWEB-CD and change Azure deployment taks
+    - Change Advanced deployment options for virtual machines to deploy Deployment agent as prerequisites
+    - Setup new connection to Azure Pipelines using your token and organization URL (https://dev.azure.com/yourorganizationname)
+    - Select your project
+    - Select deployment group CPWEB
+4. Save and Run Release 
+5. Ensure cpvmweb is assigned as Target in CPWEB deployment group
+6. You may check cpvmweb in Azure Extensions tab - this is how Azure DevOps has deployed agent
 
 ![CPWEB-CD release pipeline deployment agent](/media/devops-deploymentagent.png)
 
