@@ -510,33 +510,78 @@ Use following links to prepare template
 
 Create **ARM template for VM backup**
 
-1. Go to folder arm-vmwin and create generic Backup ARM template [deploy-backup.json](arm-vmwin/deploy-backup.json)
-2. Add Backup resource in ARM template
-    - copy resource from template https://github.com/Azure/azure-quickstart-templates/blob/master/101-recovery-services-create-vm-and-configure-backup/azuredeploy.json
-    - copy and update variables from template
-    - you will have parameters
-        - virtualMachineName
-        - virtualMachineResourceGroup
-        - vaultName
-3. Run template for deployment to update Backup vault - for Windows jump server (cpmvmjump), Windows AD server (cpvmad), Windows Web server (cpvmweb)
+How is Azure Backup configured? It is done directly on Backup Vault resource rather on VM. Nevertheless for consistency we want to make this configuration part of our VM template. Therefore we need to target multiple resource groups in our template (main RG for VM and then backup vault in our cp-infra-rg). This can be done using nested (or linked) template.
 
-```powershell
-az group deployment create -g cp-infra-rg `
-    --template-file deploy-backup.json `
-    --parameters deploy-backup-web.params.json
-az group deployment create -g cp-infra-rg `
-    --template-file deploy-backup.json `
-    --parameters deploy-backup-jump.params.json
-az group deployment create -g cp-infra-rg `
-    --template-file deploy-backup.json `
-    --parameters deploy-backup-ad.params.json
+Copy your existing deploy-vmfullwin.json template to file deploy-vmfullwin-backup.json and add the following:
+
+1. Create additional parameters backupVaultName and backupVaultResourceGroup
+2. Create additional variables:
+
+```json
+        "backupFabric": "Azure",
+        "backupPolicyName": "DefaultPolicy",
+        "protectionContainer": "[concat('iaasvmcontainer;iaasvmcontainerv2;', resourceGroup().name, ';', parameters('virtualMachineName'))]",
+        "protectedItem": "[concat('vm;iaasvmcontainerv2;', resourceGroup().name, ';', parameters('virtualMachineName'))]"
 ```
 
-Use following links to prepare template
+3. Add resource of type deployments with nested template to configure backup vault
 
-- Backup https://docs.microsoft.com/en-us/azure/backup/backup-rm-template-samples
+```json
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "nestedTemplate",
+            "resourceGroup": "[parameters('backupVaultResourceGroup')]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                        {
+                            "type": "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems",
+                            "apiVersion": "2016-12-01",
+                            "name": "[concat(parameters('backupVaultName'), '/', variables('backupFabric'), '/',variables('protectionContainer'), '/', variables('protectedItem'))]",
+                            "properties": {
+                                "protectedItemType": "Microsoft.Compute/virtualMachines",
+                                "policyId": "[resourceId('Microsoft.RecoveryServices/vaults/backupPolicies', parameters('backupVaultName'), variables('backupPolicyName'))]",
+                                "sourceResourceId": "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachineName'))]"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+```
 
-*Warning: You cannot add Backup ARM resource into VM ARM template, you cannot refference Backup vault in another resource group than VM is.*
+Deploy VM templates
+
+```powershell
+az group deployment create -g cp-vmweb-we-rg `
+    --template-file deploy-vmfullwin-backup.json `
+    --parameters deploy-wmwin-web.params.json `
+    --parameters adminPassword=Azure-123123 `
+    --parameters workspaceName=cpmonitor `
+    --parameters workspaceResourceGroup=cp-infra-rg `
+    --parameters backupVaultName=cpvault `
+    --parameters backupVaultResourceGroup=cp-infra-rg
+az group deployment create -g cp-vmjump-we-rg `
+    --template-file deploy-vmfullwin-backup.json `
+    --parameters deploy-wmwin-jump.params.json `
+    --parameters adminPassword=Azure-123123 `
+    --parameters workspaceName=cpmonitor `
+    --parameters workspaceResourceGroup=cp-infra-rg `
+    --parameters backupVaultName=cpvault `
+    --parameters backupVaultResourceGroup=cp-infra-rg
+az group deployment create -g cp-vmad-we-rg `
+    --template-file deploy-vmfullwin-backup.json `
+    --parameters deploy-wmwin-ad.params.json `
+    --parameters adminPassword=Azure-123123 `
+    --parameters workspaceName=cpmonitor `
+    --parameters workspaceResourceGroup=cp-infra-rg `
+    --parameters backupVaultName=cpvault `
+    --parameters backupVaultResourceGroup=cp-infra-rg
+```
 
 ## Use Azure DevOps to version and orchestrate deployment of infrastructure templates
 
