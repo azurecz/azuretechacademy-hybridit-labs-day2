@@ -488,19 +488,19 @@ az group deployment create -g cp-vmweb-we-rg `
     --parameters deploy-wmwin-web.params.json `
     --parameters adminPassword=Azure-123123 `
     --parameters workspaceName=cpmonitor `
-    --parameters workspaceResourceGroup=cp-infra
+    --parameters workspaceResourceGroup=cp-infra-rg
 az group deployment create -g cp-vmjump-we-rg `
     --template-file deploy-vmfullwin.json `
     --parameters deploy-wmwin-jump.params.json `
     --parameters adminPassword=Azure-123123 `
     --parameters workspaceName=cpmonitor `
-    --parameters workspaceResourceGroup=cp-infra
+    --parameters workspaceResourceGroup=cp-infra-rg
 az group deployment create -g cp-vmad-we-rg `
     --template-file deploy-vmfullwin.json `
     --parameters deploy-wmwin-ad.params.json `
     --parameters adminPassword=Azure-123123 `
     --parameters workspaceName=cpmonitor `
-    --parameters workspaceResourceGroup=cp-infra
+    --parameters workspaceResourceGroup=cp-infra-rg
 ```
 
 Use following links to prepare template
