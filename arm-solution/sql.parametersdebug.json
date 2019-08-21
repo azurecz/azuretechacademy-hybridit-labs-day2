@@ -8,7 +8,7 @@
         "dbPassword": {
             "reference": {
                 "keyVault": {
-                    "id": "/subscriptions/mysubscriptionid/resourceGroups/arm-deployment-artifacts/providers/Microsoft.KeyVault/vaults/tomasuniquevault123"
+                    "id": "/subscriptions/a0f4a733-4fce-4d49-b8a8-d30541fc1b45/resourceGroups/cp-deployment-artifacts/providers/Microsoft.KeyVault/vaults/cpuniquevaultname123"
                 },
                 "secretName": "cpSqlPassword"
             }

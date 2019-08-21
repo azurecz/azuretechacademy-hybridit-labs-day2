@@ -7,7 +7,7 @@
         }
     },
     "variables": {
-        "sqlName": "db"
+        "sqlName": "cpdb"
     },
     "resources": [
         {
@@ -16,7 +16,7 @@
             "name": "[variables('sqlName')]",
             "location": "westeurope",
             "properties": {
-                "administratorLogin": "labuser",
+                "administratorLogin": "cpadmin",
                 "administratorLoginPassword": "[parameters('dbPassword')]",
                 "version": "12.0"
             }

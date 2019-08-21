@@ -18,10 +18,10 @@
             "value": "web"
         },
         "virtualNetworkName": {
-            "value": "spoke2-net"
+            "value": "cp-spoke2-net"
         },
         "virtualNetworkResourceGroup": {
-            "value": "arm-spoke2-networking"
+            "value": "cp-spoke2-networking"
         }
     }
 }

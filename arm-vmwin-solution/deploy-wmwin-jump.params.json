@@ -18,10 +18,10 @@
             "value": "jump"
         },
         "virtualNetworkName": {
-            "value": "hub-net"
+            "value": "cp-hub-net"
         },
         "virtualNetworkResourceGroup": {
-            "value": "arm-hub-networking"
+            "value": "cp-hub-networking"
         }
     }
 }

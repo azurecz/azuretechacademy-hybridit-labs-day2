@@ -3,10 +3,10 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "baseUrl": {
-            "value": "https://tomasuniquename1234.blob.core.windows.net/"
+            "value": "https://cpstorageuniquename1234.blob.core.windows.net/"
         },
         "storageToken": {
-            "value": "se=2030-01-01T00%3A00Z&sp=r&spr=https&sv=2018-03-28&sr=c&sig=vX7MQaka7TIOqFYq6XUpJYgb30eA5Z8tim0ZttB3ak0%3D"
+            "value": "se=2030-01-01T00%3A00Z&sp=r&spr=https&sv=2018-03-28&sr=c&sig=5M9O/%2BjQ1xj7POBsLxhaY6to3gkYB6m/ljQNOBXX3lg%3D"
         }
     }
 }

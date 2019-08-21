@@ -10,7 +10,7 @@
         }
     },
     "variables": {
-        "sqlName": "[concat('db', uniqueString(resourceGroup().Id))]",
+        "sqlName": "[concat('cpdb', uniqueString(resourceGroup().Id))]",
         "location": "[resourceGroup().location]"
     },
     "resources": [

@@ -136,8 +136,8 @@ Another approach is to create resources using GUI and check results using one of
 Go to arm-labs folder. There is template sql.json. Let's deploy it, but expect few issues we will solve as we go.
 
 ```powershell
-az group create -n arm-sql -l westeurope
-az group deployment create -g arm-sql `
+az group create -n cp-sql -l westeurope
+az group deployment create -g cp-sql `
     --template-file sql.json `
     --parameters "@sql.parameters.json"
 ```
@@ -150,21 +150,22 @@ There are few issues we need to fix:
 We will now use more secure way to pass database password. You should not put secrets into template. Storing in parameters file can be OK if this file is kept separately (and more securely). Specifying during deployment time requires person deploying to know password, but that can be fixed by automated deployment and secrets management in CI/CD tool like Azure DevOps. Most secure mechanism is to use Azure KeyVault and referencing stored secret during deployment while account with rights to deploy template does not need rights to manage secrets.
 
 First create KeyVault and add password to it as secret.
+
 ```powershell
 # Create Key Vault and store secret
-az group create -n arm-deployment-artifacts -l westeurope
-$keyVaultName = "tomasuniquevault123"
+az group create -n cp-deployment-artifacts -l westeurope
+$keyVaultName = "cpuniquevaultname123"
 az keyvault create  `
     -n $keyVaultName `
-    -g arm-deployment-artifacts `
+    -g cp-deployment-artifacts `
      --enabled-for-template-deployment
-az keyvault secret set -n mojeHeslo `
+az keyvault secret set -n cpSqlPassword `
     --vault-name $keyVaultName `
     --value Azure12345678
 
 # Get Key Vault ID
 az keyvault show -n $keyVaultName `
-    -g arm-deployment-artifacts `
+    -g cp-deployment-artifacts `
     --query id `
     -o tsv
 ```
@@ -174,70 +175,72 @@ Modify your template parameters file to include reference to KeyVault secret.
 "dbPassword": {
     "reference": {
         "keyVault": {
-        "id": "/subscriptions/mysubscriptionid/resourceGroups/arm-deployment-artifacts/providers/Microsoft.KeyVault/vaults/tomasuniquevault123"
+        "id": "/subscriptions/mysubscriptionid/resourceGroups/arm-deployment-artifacts/providers/Microsoft.KeyVault/vaults/cpuniquevaultname123"
         },
-        "secretName": "mojeHeslo"
+        "secretName": "cpSqlPassword"
     }
 }
 ```
+
+Redeploy template using secrets in Key Vault.
 
 ## Create ARM templates for networking
 First let's create hub network with jump subnet and NSG, GatewaySubnet (this is where VPN can be deployed) and AD DC subnet and NSG.
 
 ```powershell
-az group create -n arm-hub-networking -l westeurope
-az group deployment create -g arm-hub-networking `
+az group create -n cp-hub-networking -l westeurope
+az group deployment create -g cp-hub-networking `
     --template-file networkingHub.json
 ```
 
 For spoke networks we will create universal template that we can reuse whenever we need the same spoke environment with web subnet. Also note that we enable Microsoft.Sql Service Endpoint capability on web subnet, so we can later on allow access from this subnet to Azure SQL without exposing it to Internet.
 
 ```powershell
-az group create -n arm-spoke1-networking -l westeurope
-az group deployment create -g arm-spoke1-networking `
+az group create -n cp-spoke1-networking -l westeurope
+az group deployment create -g cp-spoke1-networking `
     --template-file networkingSpoke.json `
     --parameters ipRange="10.1.0.0/16" `
     --parameters webSubnetRange="10.1.0.0/24" `
-    --parameters vnetName=spoke1-net
+    --parameters vnetName=cp-spoke1-net
 ```
 
 Run template with different parameters to create spoke2 environment.
 
 ```powershell
-az group create -n arm-spoke2-networking -l westeurope
-az group deployment create -g arm-spoke2-networking `
+az group create -n cp-spoke2-networking -l westeurope
+az group deployment create -g cp-spoke2-networking `
     --template-file networkingSpoke.json `
     --parameters ipRange="10.2.0.0/16" `
     --parameters webSubnetRange="10.2.0.0/24" `
-    --parameters vnetName=spoke2-net
+    --parameters vnetName=cp-spoke2-net
 ```
 
 We now need to do VNET peerings between sub and spokes. Let's create universal template that configures single peering from source to destination and use it multiple times to get topology we need.
 
 ```powershell
-az group deployment create -g arm-hub-networking `
+az group deployment create -g cp-hub-networking `
     --template-file networkingPeering.json `
-    --parameters sourceVnetName=hub-net `
-    --parameters destinationVnetName=spoke1-net `
-    --parameters destinationVnetResourceGroup=arm-spoke1-networking
+    --parameters sourceVnetName=cp-hub-net `
+    --parameters destinationVnetName=cp-spoke1-net `
+    --parameters destinationVnetResourceGroup=cp-spoke1-networking
 
-az group deployment create -g arm-hub-networking `
+az group deployment create -g cp-hub-networking `
     --template-file networkingPeering.json `
-    --parameters sourceVnetName=hub-net `
-    --parameters destinationVnetName=spoke2-net `
-    --parameters destinationVnetResourceGroup=arm-spoke2-networking
+    --parameters sourceVnetName=cp-hub-net `
+    --parameters destinationVnetName=cp-spoke2-net `
+    --parameters destinationVnetResourceGroup=cp-spoke2-networking
 
-az group deployment create -g arm-spoke1-networking `
+az group deployment create -g cp-spoke1-networking `
     --template-file networkingPeering.json `
-    --parameters sourceVnetName=spoke1-net `
-    --parameters destinationVnetName=hub-net `
-    --parameters destinationVnetResourceGroup=arm-hub-networking
+    --parameters sourceVnetName=cp-spoke1-net `
+    --parameters destinationVnetName=cp-hub-net `
+    --parameters destinationVnetResourceGroup=cp-hub-networking
 
-az group deployment create -g arm-spoke2-networking `
+az group deployment create -g cp-spoke2-networking `
     --template-file networkingPeering.json `
-    --parameters sourceVnetName=spoke2-net `
-    --parameters destinationVnetName=hub-net `
-    --parameters destinationVnetResourceGroup=arm-hub-networking
+    --parameters sourceVnetName=cp-spoke2-net `
+    --parameters destinationVnetName=cp-hub-net `
+    --parameters destinationVnetResourceGroup=cp-hub-networking
 ```
 
 ## Create ARM master template for networking
@@ -245,21 +248,21 @@ We have created templates for networking, but need to deploy with right paramete
 
 First let's delete all networking so we can start over.
 ```powershell
-az group delete -y --no-wait -n arm-hub-networking
-az group delete -y --no-wait -n arm-spoke1-networking
-az group delete -y --no-wait -n arm-spoke2-networking
+az group delete -y --no-wait -n cp-hub-networking
+az group delete -y --no-wait -n cp-spoke1-networking
+az group delete -y --no-wait -n cp-spoke2-networking
 ```
 
 We will create storage account to host our linked templates and upload.
 ```powershell
 # Make sure you set storage account name to something globaly unique
-$storageName = "tomasuniquename1234"
+$storageName = "cpstorageuniquename1234"
 
 # Create storage account
-az storage account create -g arm-deployment-artifacts -n $storageName
+az storage account create -g cp-deployment-artifacts -n $storageName
 
 # Get storage connection string
-$storageConnectionString = $(az storage account show-connection-string -g arm-deployment-artifacts -n $storageName -o tsv)
+$storageConnectionString = $(az storage account show-connection-string -g cp-deployment-artifacts -n $storageName -o tsv)
 
 # Create storage container
 az storage container create -n deploy --connection-string $storageConnectionString
@@ -302,18 +305,20 @@ az deployment create --template-file networkingMaster.json `
 
 There are two things we want to fix and enhance:
 - One of peerings is not in connected state. Fix the template and redeploy.
-- We now want to have additional subnet in spoke network with name app and range 10.x.1.0/24. Modify template and master template accordingly and redeploy.
+- We now want to have additional subnet in spoke networks with name app and range 10.x.1.0/24. Modify template and master template accordingly and redeploy.
 
 ## Add firewall rules / VNET access for Azure SQL
-We have deployed Azure SQL, but default there is firewall preventing any access to it. We could allow whole Azure to get access or whitelist specific public IPs, but for more security we want to enable access only from web subnet in spoke1-net.
+We have deployed Azure SQL, but default there is firewall preventing any access to it. We could allow whole Azure to get access or whitelist specific public IPs, but for more security we want to enable access only from web subnet in cp-spoke1-net and cp-spoke2-net.
 
 There is sqlWithVnet.json and sqlWithVnet.parameters.json with added parameters for Vnet and resource deployment. Make sure you update sqlWithVnet.parameters.json with reference to Key Vault secret you created earlier in the lab.
 
 ```powershell
-az group deployment create -g arm-sql `
+az group deployment create -g cp-sql `
     --template-file sqlWithVnet.json `
     --parameters "@sqlWithVnet.parameters.json"
 ```
+
+Go to portal and check on SQL server Firewall section that two connections to spoke subnets are configured.
 
 ## Learn how to use and upgrade Virtual Machine Scale Set in spoke1 on Linux with VM extensions and ARM
 Although in production we should use ARM templates for automation, let's also practice CLI. In this section we will learn how to use Virtual Machine Scale Set to manage web farm (also great for computing clusters etc.) and custom script extensions to install or update application.
@@ -321,87 +326,87 @@ Although in production we should use ARM templates for automation, let's also pr
 Let's create VMSS with Load Balancer. We will intentionaly use older image so we can practice upgrading images in VMSS later on.
 
 ```powershell
-az group create -n web-rg -l westeurope
-az vmss create -n webscaleset `
-    -g web-rg `
+az group create -n cp-linuxweb-rg -l westeurope
+az vmss create -n cp-webscaleset `
+    -g cp-linuxweb-rg `
     --image "Canonical:UbuntuServer:18.04-LTS:18.04.201905290" `
     --instance-count 2 `
     --vm-sku Standard_B1ms `
-    --admin-username labuser `
+    --admin-username cpadmin `
     --admin-password Azure12345678 `
     --authentication-type password `
-    --public-ip-address web-lb-ip `
-    --subnet $(az network vnet subnet show -g arm-spoke1-networking --name web --vnet-name spoke1-net --query id -o tsv) `
-    --lb web-lb `
+    --public-ip-address cp-web-lb-ip `
+    --subnet $(az network vnet subnet show -g cp-spoke1-networking --name web --vnet-name cp-spoke1-net --query id -o tsv) `
+    --lb cp-web-lb `
     --upgrade-policy-mode Manual
 ```
 
 Next we will create LB health probe and rules. 
 
 ```powershell
-az network lb probe create -g web-rg `
-    --lb-name web-lb `
+az network lb probe create -g cp-linuxweb-rg `
+    --lb-name cp-web-lb `
     --name webprobe `
     --protocol Http `
     --path '/' `
     --port 80
-az network lb rule create -g web-rg `
-    --lb-name web-lb `
+az network lb rule create -g cp-linuxweb-rg `
+    --lb-name cp-web-lb `
     --name myHTTPRule `
     --protocol tcp `
     --frontend-port 80 `
     --backend-port 80 `
     --frontend-ip-name loadBalancerFrontEnd `
-    --backend-pool-name web-lbBEPool `
+    --backend-pool-name cp-web-lbBEPool `
     --probe-name webprobe
 ```
 
-We have our webfarm running, but there is no application installed. We will use custom script to that. In practice we would use our own storage account to store both script and application code similar to how we did linked ARM templates previously. For simplicity we will use publicly available URLs on GitHub for both script (part of this repo) and application package (part of different repo).
+We have our webfarm running, but there is no application installed. We will use custom script to do that. In practice we would use our own storage account to store both script and application code similar to how we did linked ARM templates previously. For simplicity we will use publicly available URLs on GitHub for both script (part of this repo) and application package (part of different repo).
 
-We will add VM Extension with custom script. Make sure you modify protected-settings to point to your SQL URL. This step will update VMSS model, but not actual VMs as we have set upgrade policy to Manual.
+We will add VM Extension with custom script. **Make sure you modify protected-settings to point to your SQL URL**. This step will update VMSS model, but not actual VMs as we have set upgrade policy to Manual.
 
 ```powershell
-az vmss extension set --vmss-name webscaleset `
+az vmss extension set --vmss-name cp-webscaleset `
     --name CustomScript `
-    -g web-rg `
+    -g cp-linuxweb-rg `
     --version 2.0 `
     --publisher Microsoft.Azure.Extensions `
-    --protected-settings '{\"commandToExecute\": \"bash installapp-v1.sh dbnpu7hrlw5l2ks.database.windows.net labuser Azure12345678\"}' `
+    --protected-settings '{\"commandToExecute\": \"bash installapp-v1.sh cpdbxff6cpwyypdyu.database.windows.net cpadmin Azure12345678\"}' `
     --settings '{\"fileUris\": [\"https://raw.githubusercontent.com/azurecz/azuretechacademy-hybridit-labs-day2/master/scripts/installapp-v1.sh\"]}'
 ```
 
-Go to GUI and check VMSS Instances. You should see we are not running latest VMSS model. Let's initiate manual upgrade. We can do it one by one, but for not let's upgrade all VMs in VMSS at once.
+Go to GUI and check VMSS Instances. You should see we are not running latest VMSS model. Let's initiate manual upgrade. We can do it one by one, but for now let's upgrade all VMs in VMSS at once.
 
 ```powershell
 az vmss update-instances --instance-ids '*' `
-    -n webscaleset `
-    -g web-rg
+    -n cp-webscaleset `
+    -g cp-linuxweb-rg
 ```
 
-When upgrade is finished our application should be running. Check public IP of your VMSS and connect to it via browser. You will see simple todo app connected to our Azure SQL Database - create some todo item. Also check publicip/api/version. You should see version 1 string and responses comming from both servers (balancing works and we have not set any session persistency).
+When upgrade is finished our application should be running (note it may take some tame after deployment for probes to come up). Check public IP of your VMSS and connect to it via browser. You will see simple todo app connected to our Azure SQL Database - create some todo item. Also check publicip/api/version. You should see version 1 string and responses comming from both servers (balancing works and we have not set any session persistency).
 
 ```powershell
-$appIp = $(az network public-ip show -g web-rg -n web-lb-ip --query ipAddress -o tsv)
+$appIp = $(az network public-ip show -g cp-linuxweb-rg -n cp-web-lb-ip --query ipAddress -o tsv)
 Invoke-RestMethod $appIp/api/version -DisableKeepAlive
 Invoke-RestMethod $appIp/api/version -DisableKeepAlive
 Invoke-RestMethod $appIp/api/version -DisableKeepAlive
 Invoke-RestMethod $appIp/api/version -DisableKeepAlive
 ```
 
-Let's now upgrade application by changing custom script extension to new script that downloads newer versions. After this is done initiate manual upgrade on all nodes. Note in practice you may do this one by one to prevent publishing changes that does not work. You can also automate this process by setting upgrade policy to Rolling, but for this lab we will do things manually. Do not forget to modify protected-settings to fit your DB!
+Let's now upgrade application by changing custom script extension to new script that downloads newer versions. After this is done initiate manual upgrade on all nodes. Note in practice you may do this one by one to prevent publishing changes that does not work. You can also automate this process by setting upgrade policy to Rolling, but for this lab we will do things manually. **Do not forget to modify protected-settings to fit your DB!**
 
 ```powershell
-az vmss extension set --vmss-name webscaleset `
+az vmss extension set --vmss-name cp-webscaleset `
     --name CustomScript `
-    -g web-rg `
+    -g cp-linuxweb-rg `
     --version 2.0 `
     --publisher Microsoft.Azure.Extensions `
-    --protected-settings '{\"commandToExecute\": \"bash installapp-v2.sh dbnpu7hrlw5l2ks.database.windows.net labuser Azure12345678\"}' `
+    --protected-settings '{\"commandToExecute\": \"bash installapp-v2.sh cpdbxff6cpwyypdyu.database.windows.net cpadmin Azure12345678\"}' `
     --settings '{\"fileUris\": [\"https://raw.githubusercontent.com/azurecz/azuretechacademy-hybridit-labs-day2/master/scripts/installapp-v2.sh\"]}'
 
 az vmss update-instances --instance-ids '*' `
-    -n webscaleset `
-    -g web-rg
+    -n cp-webscaleset `
+    -g cp-linuxweb-rg
 ```
 
 After a while your app should have v2 code.
@@ -413,26 +418,26 @@ Invoke-RestMethod $appIp/api/version -DisableKeepAlive
 Azure base images are updated to include latest patches. As our application deployment is automated, we can change VMSS model to include newer OS image version. Note this process also can be automated (auto OS upgrade mode on VMSS), but we will do this manually.
 
 ```powershell
-az vmss update -n webscaleset `
-    -g web-rg `
+az vmss update -n cp-webscaleset `
+    -g cp-linuxweb-rg `
     --set virtualMachineProfile.storageProfile.imageReference.version=18.04.201906271
 
 az vmss update-instances --instance-ids '*' `
-    -n webscaleset `
-    -g web-rg
+    -n cp-webscaleset `
+    -g cp-linuxweb-rg
 ```
 
-Note there is downtime. Our application is suitable for rolling upgrade so in practice you would upgrade instances one by one or use automated upgrading policy.
+Our application is suitable for rolling upgrade so in practice you would upgrade instances one by one or use automated upgrading policy to not cause any downtime.
 
 Also note that you can use custom golden images if you do not want to automate only with VM extensions. VMSS is somewhat similar to container orchestration, but with full VMs so can work in scenarios where containers are not an option. VMSS are great for web farms, computing, rendering and HPC clusters, Big Data clusters and are often used to build PaaS on top such as with Azure Kubernetes Service or Azure Databricks.
 
 ## Create ARM template for Windows-based web servers in spoke2 including Azure Backup and basic monitoring
 
-Check you have correctly created virtual networks. We will use spoke2-net network.
+Check you have correctly created virtual networks. We will use cp-spoke2-net network.
 
 Create these additional resources (remember Day1 training) in resource group cp-infra-rg
 
-1. Create Monitoring resources cpmonitor and configure to capture CPU etc.
+1. Create Monitoring resources (Log Analytics workspace) cpmonitor and configure to capture CPU etc. **Note name has to be globally unique so you will probably need to use different one such as cpmonitor654**.
 2. Create Backup vault cpvault
 
 Create **ARM template for Windows VM**
@@ -441,10 +446,10 @@ Create **ARM template for Windows VM**
 2. Click create Windows VM from Azure Portal and Download template for automation (not create VM) and save it to deploy-vmwin.json and deploy-wmwin.params.json
     - Name: cpvmweb
     - Inbound port rules: None
-    - Virtual network: spoke2-net
+    - Virtual network: cp-spoke2-net
     - Public IP: yes
     - NIC network security group: None
-3. Clean up and customize deploy-vmwin.json and deploy-wmwin.params.json to have it only this parameters
+3. Clean up and customize deploy-vmwin.json and deploy-wmwin.params.json to have only this parameters
     - virtualMachineName
     - adminUsername
     - adminPassword
@@ -460,17 +465,17 @@ az group create -n cp-vmjump-we-rg -l westeurope
 az group deployment create -g cp-vmjump-we-rg `
     --template-file deploy-vmwin.json `
     --parameters deploy-wmwin-jump.params.json `
-    --parameters adminPassword=Azure-123123
+    --parameters adminPassword=Azure12345678
 az group create -n cp-vmad-we-rg -l westeurope
 az group deployment create -g cp-vmad-we-rg `
     --template-file deploy-vmwin.json `
     --parameters deploy-wmwin-ad.params.json `
-    --parameters adminPassword=Azure-123123
+    --parameters adminPassword=Azure12345678
 az group create -n cp-vmweb-we-rg -l westeurope
 az group deployment create -g cp-vmweb-we-rg `
     --template-file deploy-vmwin.json `
     --parameters deploy-wmwin-web.params.json `
-    --parameters adminPassword=Azure-123123
+    --parameters adminPassword=Azure12345678
 ```
 
 Update **ARM template to enable VM monitoring**
@@ -486,19 +491,19 @@ Update **ARM template to enable VM monitoring**
 az group deployment create -g cp-vmweb-we-rg `
     --template-file deploy-vmfullwin.json `
     --parameters deploy-wmwin-web.params.json `
-    --parameters adminPassword=Azure-123123 `
+    --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
     --parameters workspaceResourceGroup=cp-infra-rg
 az group deployment create -g cp-vmjump-we-rg `
     --template-file deploy-vmfullwin.json `
     --parameters deploy-wmwin-jump.params.json `
-    --parameters adminPassword=Azure-123123 `
+    --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
     --parameters workspaceResourceGroup=cp-infra-rg
 az group deployment create -g cp-vmad-we-rg `
     --template-file deploy-vmfullwin.json `
     --parameters deploy-wmwin-ad.params.json `
-    --parameters adminPassword=Azure-123123 `
+    --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
     --parameters workspaceResourceGroup=cp-infra-rg
 ```
@@ -507,6 +512,8 @@ Use following links to prepare template
 
 - Azure Monitor https://docs.microsoft.com/en-us/azure/azure-monitor/platform/template-workspace-configuration
 - Agent https://azure.microsoft.com/en-us/resources/templates/201-oms-extension-windows-vm/
+
+After deployment check VMs are connected by looking into your Log Analytics workspace.
 
 Create **ARM template for VM backup**
 
@@ -560,7 +567,7 @@ Deploy VM templates
 az group deployment create -g cp-vmweb-we-rg `
     --template-file deploy-vmfullwin-backup.json `
     --parameters deploy-wmwin-web.params.json `
-    --parameters adminPassword=Azure-123123 `
+    --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
     --parameters workspaceResourceGroup=cp-infra-rg `
     --parameters backupVaultName=cpvault `
@@ -568,7 +575,7 @@ az group deployment create -g cp-vmweb-we-rg `
 az group deployment create -g cp-vmjump-we-rg `
     --template-file deploy-vmfullwin-backup.json `
     --parameters deploy-wmwin-jump.params.json `
-    --parameters adminPassword=Azure-123123 `
+    --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
     --parameters workspaceResourceGroup=cp-infra-rg `
     --parameters backupVaultName=cpvault `
@@ -576,12 +583,14 @@ az group deployment create -g cp-vmjump-we-rg `
 az group deployment create -g cp-vmad-we-rg `
     --template-file deploy-vmfullwin-backup.json `
     --parameters deploy-wmwin-ad.params.json `
-    --parameters adminPassword=Azure-123123 `
+    --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
     --parameters workspaceResourceGroup=cp-infra-rg `
     --parameters backupVaultName=cpvault `
     --parameters backupVaultResourceGroup=cp-infra-rg
 ```
+
+Make sure backup is configured by inspecting you backup vault or Backup tab in your VM.
 
 ## Use Azure DevOps to version and orchestrate deployment of infrastructure templates
 
@@ -604,7 +613,7 @@ Now we will create first Azure DevOps Pipeline to deploy ARM template with Windo
     - resource group name cp-vmweb-we-rg
     - location westeurope
     - as template locate deploy-vmwin.json in arm-win-solution folder
-    - paramaters locate deploy-wmwin-web.params.json in arm-win-solution folder and override -adminPassword=Azure-123123
+    - paramaters locate deploy-wmwin-web.params.json in arm-win-solution folder and override -adminPassword=Azure12345678
 4. Save, Create Release and wait for successfull deployment
 
 Repeat it for all other servers, you can use different pipeline.
@@ -651,7 +660,7 @@ Continue configuration to connect SQL server
 1. Open Repos to prepare script to configure application - setup ENV variables
     - create new configwinapp.ps1, add parameters SQL server name (sqlServer), username (sqlUsername), password (sqlPassword)
 2. Open existing Release pipeline CPWEB-CD and change Azure deployment taks
-    - add PowerShell script task and select configwinapp.ps1 and add arguments for SQL server connection, e.g. -sqlServer "cpsqlserver1.database.windows.net" -sqlUsername "labuser" -sqlPassword "Azure-123123"
+    - add PowerShell script task and select configwinapp.ps1 and add arguments for SQL server connection, e.g. -sqlServer "cpsqlserver1.database.windows.net" -sqlUsername "cpadmin" -sqlPassword "Azure12345678"
 
 Connect to cpvmweb IP via browser and you should see application up and running.
 
@@ -662,7 +671,7 @@ We are using secrets directly in our pipeline, perhaps we can enhance that. You 
 1. In Pipelines, Library create new Variable Group
 2. Select Link secrets from Azure Key Vault as variables and reference Key Vault we created previously today and secret with SQL password.
 3. Edit Release pipeline and in Variables section link our Variable Group. Note you scope it all release phases or to selected stages (eg. set for Dev with one Key Vault and set for Prod).
-4. Reference variable in Powershell task parameters, eg. -sqlPassword $(mojeHeslo)
+4. Reference variable in Powershell task parameters, eg. -sqlPassword $(cpSqlPassword)
 
 
 ## DevOps homework
@@ -673,7 +682,7 @@ Configure new production deployment
 - deploy web application with Release pipeline CPWEB-CD as new stage PROD
 - connect to different PROD SQL server
 
-## Automation and governance with Azure Bluprints
+## Automation and governance with Azure Blueprints
 Consider following scenario. We have created hub subcription with centralized components such as Azure Firewall, Azure VPN and Domain Controller. Application projects are deployed in spoke subscriptions that allow connectivity via hub network. Suppose for certain types of projects we have following governance needs:
 - Deploy VNET for project and automatically configure VNET peering with hub subscription.
 - Allow networking team access to VNET configurations, but do not let application operators touch it.

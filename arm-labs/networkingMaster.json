@@ -21,27 +21,27 @@
             "type": "Microsoft.Resources/resourceGroups",
             "apiVersion": "2018-05-01",
             "location": "westeurope",
-            "name": "arm-hub-networking"
+            "name": "cp-hub-networking"
         },
         {
             "type": "Microsoft.Resources/resourceGroups",
             "apiVersion": "2018-05-01",
             "location": "westeurope",
-            "name": "arm-spoke1-networking"
+            "name": "cp-spoke1-networking"
         },
         {
             "type": "Microsoft.Resources/resourceGroups",
             "apiVersion": "2018-05-01",
             "location": "westeurope",
-            "name": "arm-spoke2-networking"
+            "name": "cp-spoke2-networking"
         },
         {
             "name": "hubNetworking",
             "type": "Microsoft.Resources/deployments",
             "dependsOn": [
-                "[resourceId('Microsoft.Resources/resourceGroups', 'arm-hub-networking')]"
+                "[resourceId('Microsoft.Resources/resourceGroups', 'cp-hub-networking')]"
             ],
-            "resourceGroup": "arm-hub-networking",
+            "resourceGroup": "cp-hub-networking",
             "apiVersion": "2018-05-01",
             "properties": {
                 "mode": "Incremental",
@@ -56,9 +56,9 @@
             "name": "spoke1Networking",
             "type": "Microsoft.Resources/deployments",
             "dependsOn": [
-                "[resourceId('Microsoft.Resources/resourceGroups', 'arm-spoke1-networking')]"
+                "[resourceId('Microsoft.Resources/resourceGroups', 'cp-spoke1-networking')]"
             ],
-            "resourceGroup": "arm-spoke1-networking",
+            "resourceGroup": "cp-spoke1-networking",
             "apiVersion": "2018-05-01",
             "properties": {
                 "mode": "Incremental",
@@ -68,7 +68,7 @@
                 },
                 "parameters": {
                     "vnetName": {
-                        "value": "spoke1-net"
+                        "value": "cp-spoke1-net"
                     },
                     "ipRange": {
                         "value": "10.1.0.0/16"
@@ -83,9 +83,9 @@
             "name": "spoke2Networking",
             "type": "Microsoft.Resources/deployments",
             "dependsOn": [
-                "[resourceId('Microsoft.Resources/resourceGroups', 'arm-spoke2-networking')]"
+                "[resourceId('Microsoft.Resources/resourceGroups', 'cp-spoke2-networking')]"
             ],
-            "resourceGroup": "arm-spoke2-networking",
+            "resourceGroup": "cp-spoke2-networking",
             "apiVersion": "2018-05-01",
             "properties": {
                 "mode": "Incremental",
@@ -95,7 +95,7 @@
                 },
                 "parameters": {
                     "vnetName": {
-                        "value": "spoke2-net"
+                        "value": "cp-spoke2-net"
                     },
                     "ipRange": {
                         "value": "10.2.0.0/16"
@@ -113,7 +113,7 @@
                 "hubNetworking",
                 "spoke1Networking"
             ],
-            "resourceGroup": "arm-hub-networking",
+            "resourceGroup": "cp-hub-networking",
             "apiVersion": "2018-05-01",
             "properties": {
                 "mode": "Incremental",
@@ -123,13 +123,13 @@
                 },
                 "parameters": {
                     "sourceVnetName": {
-                        "value": "hub-net"
+                        "value": "cp-hub-net"
                     },
                     "destinationVnetName": {
-                        "value": "spoke1-net"
+                        "value": "cp-spoke1-net"
                     },
                     "destinationVnetResourceGroup": {
-                        "value": "arm-spoke1-networking"
+                        "value": "cp-spoke1-networking"
                     }
                 }
             }
@@ -141,7 +141,7 @@
                 "hubNetworking",
                 "spoke2Networking"
             ],
-            "resourceGroup": "arm-hub-networking",
+            "resourceGroup": "cp-hub-networking",
             "apiVersion": "2018-05-01",
             "properties": {
                 "mode": "Incremental",
@@ -151,13 +151,13 @@
                 },
                 "parameters": {
                     "sourceVnetName": {
-                        "value": "hub-net"
+                        "value": "cp-hub-net"
                     },
                     "destinationVnetName": {
-                        "value": "spoke2-net"
+                        "value": "cp-spoke2-net"
                     },
                     "destinationVnetResourceGroup": {
-                        "value": "arm-spoke2-networking"
+                        "value": "cp-spoke2-networking"
                     }
                 }
             }
@@ -169,7 +169,7 @@
                 "hubNetworking",
                 "spoke1Networking"
             ],
-            "resourceGroup": "arm-spoke1-networking",
+            "resourceGroup": "cp-spoke1-networking",
             "apiVersion": "2018-05-01",
             "properties": {
                 "mode": "Incremental",
@@ -179,13 +179,13 @@
                 },
                 "parameters": {
                     "sourceVnetName": {
-                        "value": "spoke1-net"
+                        "value": "cp-spoke1-net"
                     },
                     "destinationVnetName": {
-                        "value": "hub-net"
+                        "value": "cp-hub-net"
                     },
                     "destinationVnetResourceGroup": {
-                        "value": "arm-hub-networking"
+                        "value": "cp-hub-networking"
                     }
                 }
             }

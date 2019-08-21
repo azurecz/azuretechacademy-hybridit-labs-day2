@@ -8,20 +8,30 @@
         "dbPassword": {
             "type": "securestring"
         },
-        "vnetName": {
+        "spoke1VnetName": {
             "type": "string"
         },
-        "subnetName": {
+        "spoke1SubnetName": {
             "type": "string"
         },
-        "vnetResourceGroup": {
+        "spoke1VnetResourceGroup": {
+            "type": "string"
+        },
+        "spoke2VnetName": {
+            "type": "string"
+        },
+        "spoke2SubnetName": {
+            "type": "string"
+        },
+        "spoke2VnetResourceGroup": {
             "type": "string"
         }
     },
     "variables": {
-        "sqlName": "[concat('db', uniqueString(resourceGroup().Id))]",
+        "sqlName": "[concat('cpdb', uniqueString(resourceGroup().Id))]",
         "location": "[resourceGroup().location]",
-        "subnetId": "[resourceId(parameters('vnetResourceGroup'), 'Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]"
+        "spoke1SubnetId": "[resourceId(parameters('spoke1VnetResourceGroup'), 'Microsoft.Network/virtualNetworks/subnets', parameters('spoke1VnetName'), parameters('spoke1SubnetName'))]",
+        "spoke2SubnetId": "[resourceId(parameters('spoke2VnetResourceGroup'), 'Microsoft.Network/virtualNetworks/subnets', parameters('spoke2VnetName'), parameters('spoke2SubnetName'))]"
     },
     "resources": [
         {
@@ -40,7 +50,19 @@
             "name": "[concat(variables('sqlName'), '/spoke1')]",
             "apiVersion": "2015-05-01-preview",
             "properties": {
-                "virtualNetworkSubnetId": "[variables('subnetId')]",
+                "virtualNetworkSubnetId": "[variables('spoke1SubnetId')]",
+                "ignoreMissingVnetServiceEndpoint": true
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', variables('sqlName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Sql/servers/virtualNetworkRules",
+            "name": "[concat(variables('sqlName'), '/spoke2')]",
+            "apiVersion": "2015-05-01-preview",
+            "properties": {
+                "virtualNetworkSubnetId": "[variables('spoke2SubnetId')]",
                 "ignoreMissingVnetServiceEndpoint": true
             },
             "dependsOn": [

@@ -3,24 +3,33 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "dbLoginName": {
-            "value": "labuser"
+            "value": "cpadmin"
         },
         "dbPassword": {
             "reference": {
                 "keyVault": {
                     "id": "/subscriptions/mysubscriptionid/resourceGroups/arm-deployment-artifacts/providers/Microsoft.KeyVault/vaults/tomasuniquevault123"
                 },
-                "secretName": "mojeHeslo"
+                "secretName": "cpSqlPassword"
             }
         },
-        "vnetName": {
-            "value": "spoke1-net"
+        "spoke1VnetName": {
+            "value": "cp-spoke1-net"
         },
-        "subnetName": {
+        "spoke1SubnetName": {
             "value": "web"
         },
-        "vnetResourceGroup": {
-            "value": "arm-spoke1-networking"
+        "spoke1VnetResourceGroup": {
+            "value": "cp-spoke1-networking"
+        },
+        "spoke2VnetName": {
+            "value": "cp-spoke2-net"
+        },
+        "spoke2SubnetName": {
+            "value": "web"
+        },
+        "spoke2VnetResourceGroup": {
+            "value": "cp-spoke2-networking"
         }
     }
 }
