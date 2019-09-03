@@ -723,10 +723,6 @@ Study template [here](blueprints/limitedContributorRole.json). Modify blueprint 
 
 For compliance reasons we want to limit resources to be deployed only in West Europe and North Europe. Modify blueprint and add Azure Policy artefact on subscription level. Find Allowed Locations built-in policy and set fixed parameter to West Europe and North Europe only. Save blueprint and publish as **version 4**. After deployment connect as project1guy and create storage account in West Europe and East US. Deployment in East US should fail.
 
-## Automate and publish corporate golden images with Shared Image Gallery and Image Builder
-
-## Package you ARM template and publish in Azure Service Catalog as Managed Application (internal SaaS-style)
-
 ## Contacts
 
 ### Tomas Kubica - Cloud Solutions Architect
