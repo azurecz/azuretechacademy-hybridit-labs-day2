@@ -284,7 +284,7 @@ az storage blob upload -f networkingPeering.json `
     --connection-string $storageConnectionString
 ```
 
-Storage account by default does not allow anonyumous access. Let's generate SAS token so ARM master template can access linked files securely.
+Storage account by default does not allow anonymous access. Let's generate SAS token so ARM master template can access linked files securely.
 
 ```powershell
 az storage container generate-sas -n deploy `
@@ -435,7 +435,7 @@ Also note that you can use custom golden images if you do not want to automate o
 
 Check you have correctly created virtual networks. We will use cp-spoke2-net network.
 
-Create these additional resources (remember Day1 training) in resource group cp-infra-rg
+Create these additional resources (remember Day1 training) in resource group cp-deployment-artifacts
 
 1. Create Monitoring resources (Log Analytics workspace) cpmonitor and configure to capture CPU etc. **Note name has to be globally unique so you will probably need to use different one such as cpmonitor654**.
 2. Create Backup vault cpvault
@@ -493,19 +493,19 @@ az group deployment create -g cp-vmweb-we-rg `
     --parameters deploy-wmwin-web.params.json `
     --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
-    --parameters workspaceResourceGroup=cp-infra-rg
+    --parameters workspaceResourceGroup=cp-deployment-artifacts
 az group deployment create -g cp-vmjump-we-rg `
     --template-file deploy-vmfullwin.json `
     --parameters deploy-wmwin-jump.params.json `
     --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
-    --parameters workspaceResourceGroup=cp-infra-rg
+    --parameters workspaceResourceGroup=cp-deployment-artifacts
 az group deployment create -g cp-vmad-we-rg `
     --template-file deploy-vmfullwin.json `
     --parameters deploy-wmwin-ad.params.json `
     --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
-    --parameters workspaceResourceGroup=cp-infra-rg
+    --parameters workspaceResourceGroup=cp-deployment-artifacts
 ```
 
 Use following links to prepare template
@@ -569,25 +569,25 @@ az group deployment create -g cp-vmweb-we-rg `
     --parameters deploy-wmwin-web.params.json `
     --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
-    --parameters workspaceResourceGroup=cp-infra-rg `
+    --parameters workspaceResourceGroup=cp-deployment-artifacts `
     --parameters backupVaultName=cpvault `
-    --parameters backupVaultResourceGroup=cp-infra-rg
+    --parameters backupVaultResourceGroup=cp-deployment-artifacts
 az group deployment create -g cp-vmjump-we-rg `
     --template-file deploy-vmfullwin-backup.json `
     --parameters deploy-wmwin-jump.params.json `
     --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
-    --parameters workspaceResourceGroup=cp-infra-rg `
+    --parameters workspaceResourceGroup=cp-deployment-artifacts `
     --parameters backupVaultName=cpvault `
-    --parameters backupVaultResourceGroup=cp-infra-rg
+    --parameters backupVaultResourceGroup=cp-deployment-artifacts
 az group deployment create -g cp-vmad-we-rg `
     --template-file deploy-vmfullwin-backup.json `
     --parameters deploy-wmwin-ad.params.json `
     --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
-    --parameters workspaceResourceGroup=cp-infra-rg `
+    --parameters workspaceResourceGroup=cp-deployment-artifacts `
     --parameters backupVaultName=cpvault `
-    --parameters backupVaultResourceGroup=cp-infra-rg
+    --parameters backupVaultResourceGroup=cp-deployment-artifacts
 ```
 
 Make sure backup is configured by inspecting you backup vault or Backup tab in your VM.
@@ -672,7 +672,6 @@ We are using secrets directly in our pipeline, perhaps we can enhance that. You 
 2. Select Link secrets from Azure Key Vault as variables and reference Key Vault we created previously today and secret with SQL password.
 3. Edit Release pipeline and in Variables section link our Variable Group. Note you scope it all release phases or to selected stages (eg. set for Dev with one Key Vault and set for Prod).
 4. Reference variable in Powershell task parameters, eg. -sqlPassword $(cpSqlPassword)
-
 
 ## DevOps homework
 

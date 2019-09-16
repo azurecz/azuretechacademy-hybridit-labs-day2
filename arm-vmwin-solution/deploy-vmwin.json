@@ -29,7 +29,7 @@
         "subnetRef": "[concat(variables('vnetId'), '/subnets/', parameters('subnetName'))]",
         "publicIpAddressName": "[concat(parameters('virtualMachineName'), 'ip')]",
         "networkInterfaceName": "[concat(parameters('virtualMachineName'), 'nic')]",
-        "diagnosticsStorageAccountName": "[concat(parameters('virtualMachineName'), 'diag')]"
+        "diagnosticsStorageAccountName": "[take(concat(parameters('virtualMachineName'), 'diag', uniqueString(resourceGroup().Id)), 24)]"
     },
     "resources": [
         {            
