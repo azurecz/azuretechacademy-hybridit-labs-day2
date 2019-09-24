@@ -613,7 +613,7 @@ Now we will create first Azure DevOps Pipeline to deploy ARM template with Windo
     - resource group name cp-vmweb-we-rg
     - location westeurope
     - as template locate deploy-vmwin.json in arm-win-solution folder
-    - paramaters locate deploy-wmwin-web.params.json in arm-win-solution folder and override -adminPassword=Azure12345678
+    - paramaters locate deploy-wmwin-web.params.json in arm-win-solution folder and override -adminPassword Azure12345678
 4. Save, Create Release and wait for successfull deployment
 
 Repeat it for all other servers, you can use different pipeline.
