@@ -53,7 +53,7 @@
         "subnetRef": "[concat(variables('vnetId'), '/subnets/', parameters('subnetName'))]",
         "publicIpAddressName": "[concat(parameters('virtualMachineName'), 'ip')]",
         "networkInterfaceName": "[concat(parameters('virtualMachineName'), 'nic')]",
-        "diagnosticsStorageAccountName": "[concat(parameters('virtualMachineName'), 'diag2')]",
+        "diagnosticsStorageAccountName": "[take(concat('diag', uniqueString(resourceGroup().Id)), 24)]",
         "backupFabric": "Azure",
         "backupPolicyName": "DefaultPolicy",
         "protectionContainer": "[concat('iaasvmcontainer;iaasvmcontainerv2;', resourceGroup().name, ';', parameters('virtualMachineName'))]",

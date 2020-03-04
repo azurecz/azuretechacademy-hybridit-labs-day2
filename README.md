@@ -449,7 +449,7 @@ Create **ARM template for Windows VM**
     - Virtual network: cp-spoke2-net
     - Public IP: yes
     - NIC network security group: None
-3. Clean up and customize deploy-vmwin.json and deploy-wmwin.params.json to have only this parameters
+3. Clean up and customize deploy-vmwin.json and deploy-vmwin.params.json to have only this parameters
     - virtualMachineName
     - adminUsername
     - adminPassword
@@ -464,17 +464,17 @@ Create **ARM template for Windows VM**
 az group create -n cp-vmjump-we-rg -l westeurope
 az group deployment create -g cp-vmjump-we-rg `
     --template-file deploy-vmwin.json `
-    --parameters deploy-wmwin-jump.params.json `
+    --parameters deploy-vmwin-jump.params.json `
     --parameters adminPassword=Azure12345678
 az group create -n cp-vmad-we-rg -l westeurope
 az group deployment create -g cp-vmad-we-rg `
     --template-file deploy-vmwin.json `
-    --parameters deploy-wmwin-ad.params.json `
+    --parameters deploy-vmwin-ad.params.json `
     --parameters adminPassword=Azure12345678
 az group create -n cp-vmweb-we-rg -l westeurope
 az group deployment create -g cp-vmweb-we-rg `
     --template-file deploy-vmwin.json `
-    --parameters deploy-wmwin-web.params.json `
+    --parameters deploy-vmwin-web.params.json `
     --parameters adminPassword=Azure12345678
 ```
 
@@ -490,19 +490,19 @@ Update **ARM template to enable VM monitoring**
 ```powershell
 az group deployment create -g cp-vmweb-we-rg `
     --template-file deploy-vmfullwin.json `
-    --parameters deploy-wmwin-web.params.json `
+    --parameters deploy-vmwin-web.params.json `
     --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
     --parameters workspaceResourceGroup=cp-deployment-artifacts
 az group deployment create -g cp-vmjump-we-rg `
     --template-file deploy-vmfullwin.json `
-    --parameters deploy-wmwin-jump.params.json `
+    --parameters deploy-vmwin-jump.params.json `
     --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
     --parameters workspaceResourceGroup=cp-deployment-artifacts
 az group deployment create -g cp-vmad-we-rg `
     --template-file deploy-vmfullwin.json `
-    --parameters deploy-wmwin-ad.params.json `
+    --parameters deploy-vmwin-ad.params.json `
     --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
     --parameters workspaceResourceGroup=cp-deployment-artifacts
@@ -566,7 +566,7 @@ Deploy VM templates
 ```powershell
 az group deployment create -g cp-vmweb-we-rg `
     --template-file deploy-vmfullwin-backup.json `
-    --parameters deploy-wmwin-web.params.json `
+    --parameters deploy-vmwin-web.params.json `
     --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
     --parameters workspaceResourceGroup=cp-deployment-artifacts `
@@ -574,7 +574,7 @@ az group deployment create -g cp-vmweb-we-rg `
     --parameters backupVaultResourceGroup=cp-deployment-artifacts
 az group deployment create -g cp-vmjump-we-rg `
     --template-file deploy-vmfullwin-backup.json `
-    --parameters deploy-wmwin-jump.params.json `
+    --parameters deploy-vmwin-jump.params.json `
     --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
     --parameters workspaceResourceGroup=cp-deployment-artifacts `
@@ -582,7 +582,7 @@ az group deployment create -g cp-vmjump-we-rg `
     --parameters backupVaultResourceGroup=cp-deployment-artifacts
 az group deployment create -g cp-vmad-we-rg `
     --template-file deploy-vmfullwin-backup.json `
-    --parameters deploy-wmwin-ad.params.json `
+    --parameters deploy-vmwin-ad.params.json `
     --parameters adminPassword=Azure12345678 `
     --parameters workspaceName=cpmonitor `
     --parameters workspaceResourceGroup=cp-deployment-artifacts `
